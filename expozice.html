@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expoziční trojúhelník</title>
+<meta name="description" content="Interaktivní simulace expozičního trojúhelníku: čas závěrky, clona a ISO.">
+<style>
+:root{
+  --bg:#121418; --panel:#1b1e24; --panel2:#262a32; --line:#30353f;
+  --text:#eceef1; --muted:#9ba2ad; --accent:#f5b83d;
+  --t:#4fc3f7; --a:#9ccc65; --i:#ff8a65;
+  --ok:#9ccc65; --warn:#f5b83d; --bad:#ef5350;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{max-width:1320px;margin:0 auto;padding:14px 20px 4px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:.88rem;margin-bottom:8px;padding:4px 10px 4px 8px;border:1px solid var(--line);border-radius:999px}
+.back:hover{color:var(--text);border-color:var(--muted)}
+h1{margin:0 0 4px;font-size:clamp(1.3rem,2.6vw,1.8rem)}
+h2{font-size:1.1rem;margin:0 0 10px}
+header p{margin:0;color:var(--muted)}
+main{max-width:1320px;margin:0 auto;padding:12px 20px 20px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+@media (max-width:960px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+
+.photo-wrap{position:relative;border-radius:8px;overflow:hidden;background:#000}
+#photo{display:block;width:100%;height:auto}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
+#flash.on{opacity:.85;transition:none}
+
+.lcd{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;margin-top:12px;font-variant-numeric:tabular-nums}
+.vals{display:flex;gap:16px;font-weight:700;font-size:1.1rem}
+.vals .t{color:var(--t)} .vals .a{color:var(--a)} .vals .i{color:var(--i)}
+.meter{flex:1 1 260px;min-width:220px}
+.scale{position:relative;height:20px}
+.scale span{position:absolute;transform:translateX(-50%);font-size:.75rem;color:var(--muted)}
+.scale span.zero{color:var(--text);font-weight:700}
+.bar{position:relative;height:6px;border-radius:3px;background:linear-gradient(90deg,#4a3434,#3d434d 35%,#56606c 50%,#3d434d 65%,#4a3434)}
+.bar i{position:absolute;top:0;width:1px;height:6px;background:#8b929c}
+#needle{position:absolute;top:8px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:11px solid var(--accent);transform:translateX(-50%);transition:left .2s}
+.meter-gap{height:20px}
+#expStatus{font-weight:700}
+.st-ok{color:var(--ok)} .st-warn{color:var(--warn)} .st-bad{color:var(--bad)}
+
+.now{margin-top:14px;display:grid;gap:8px}
+.now p{margin:0;padding-left:18px;position:relative;color:#d8dbe0}
+.now p::before{content:"";position:absolute;left:0;top:.5em;width:9px;height:9px;border-radius:50%;background:var(--c)}
+
+#tri{display:block;width:100%;max-width:320px;margin:0 auto 4px}
+#tri .edge{fill:none;stroke:#3a404b;stroke-width:3}
+#tri .node{fill:var(--panel2);stroke-width:3}
+#tri .val{fill:var(--text);font:700 13px system-ui,Arial,sans-serif;text-anchor:middle}
+#tri .lbl{fill:var(--muted);font:600 11.5px system-ui,Arial,sans-serif;text-anchor:middle;letter-spacing:.04em}
+#tri .center{fill:var(--muted);font:700 12px system-ui,Arial,sans-serif;text-anchor:middle;letter-spacing:.12em}
+#tri .ev{font:800 22px system-ui,Arial,sans-serif;text-anchor:middle}
+
+.group{margin-top:16px}
+.group-title{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel2);padding:4px;border-radius:9px}
+.seg button{flex:1 1 auto;border:0;background:transparent;color:var(--text);padding:7px 8px;border-radius:6px;font:inherit;font-size:.9rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#111;font-weight:700}
+.hint{font-size:.85rem;color:var(--muted);margin:6px 2px 0}
+select{width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit}
+
+.ctrl{margin-top:18px}
+.ctrl-head{display:flex;align-items:center;gap:8px}
+.ctrl-head .dot{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.ctrl-head label{font-weight:600}
+.ctrl-head output{margin-left:auto;font-weight:800;font-size:1.15rem;font-variant-numeric:tabular-nums;color:var(--c)}
+.badge{font-size:.7rem;font-weight:800;background:var(--accent);color:#111;border-radius:4px;padding:1px 6px;display:none}
+.ctrl.auto .badge{display:inline-block}
+.ctrl.auto input{opacity:.5}
+input[type=range]{width:100%;margin:8px 0 2px;accent-color:var(--c);height:28px;cursor:pointer}
+input[type=range]:disabled{cursor:not-allowed}
+.ends{display:flex;justify-content:space-between;gap:10px;font-size:.78rem;color:var(--muted)}
+.ends span:last-child{text-align:right}
+.check{display:flex;align-items:center;gap:8px;margin-top:16px;cursor:pointer}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+
+.snap{width:100%;margin-top:20px;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#111;font:800 1.05rem system-ui,Arial,sans-serif;cursor:pointer}
+.snap:active{transform:translateY(1px)}
+
+section{max-width:1320px;margin:0 auto;padding:0 20px 20px}
+.gal-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.gal-head h2{margin:0}
+.gal-head button{margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:.85rem;cursor:pointer}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.thumbs:empty::before{content:"Zatím žádné snímky. Tlačítkem „Vyfotit“ si ulož aktuální nastavení a porovnej různé varianty.";color:var(--muted);font-size:.9rem}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:zoom-in}
+figure img{display:block;width:100%}
+figcaption{font-size:.8rem;padding:6px 8px;color:#c9cdd3;font-variant-numeric:tabular-nums}
+figcaption small{display:block;color:var(--muted)}
+
+details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:12px}
+summary{cursor:pointer;font-weight:700}
+details p,details li{color:#d3d6db}
+details ul,details ol{padding-left:22px}
+
+dialog{border:0;padding:0;background:transparent;max-width:min(96vw,1200px)}
+dialog::backdrop{background:rgba(0,0,0,.85)}
+dialog img{display:block;max-width:100%;max-height:82vh;border-radius:8px}
+dialog p{color:#fff;margin:8px 0 0;text-align:center}
+footer{max-width:1320px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="index.html">← Všechna cvičení</a>
+  <h1>Expoziční trojúhelník</h1>
+  <p>Měň čas závěrky, clonu a ISO a sleduj, jak se mění jas snímku, zachycení pohybu, hloubka ostrosti a šum.</p>
+</header>
+
+<main>
+  <div>
+    <div class="card">
+      <div class="photo-wrap">
+        <canvas id="photo" width="960" height="540" aria-label="Simulovaný snímek"></canvas>
+        <div id="flash"></div>
+      </div>
+
+      <div class="lcd">
+        <div class="vals">
+          <span class="t" id="lcdT">1/500</span>
+          <span class="a" id="lcdA">f/8</span>
+          <span class="i" id="lcdI">ISO 100</span>
+        </div>
+        <div class="meter" aria-hidden="true">
+          <div class="scale" id="scale"></div>
+          <div class="bar" id="bar"><div id="needle"></div></div>
+          <div class="meter-gap"></div>
+        </div>
+        <div id="expStatus">Správná expozice</div>
+      </div>
+
+      <div class="now" aria-live="polite">
+        <p id="capT" style="--c:var(--t)"></p>
+        <p id="capA" style="--c:var(--a)"></p>
+        <p id="capI" style="--c:var(--i)"></p>
+        <p id="capE" style="--c:var(--accent)"></p>
+      </div>
+    </div>
+  </div>
+
+  <aside class="card">
+    <svg id="tri" viewBox="0 0 320 262" role="img" aria-label="Expoziční trojúhelník s aktuálními hodnotami">
+      <polygon class="edge" points="160,44 52,206 268,206"/>
+      <text class="center" x="160" y="142">EXPOZICE</text>
+      <text class="ev" id="triEV" x="160" y="170">±0 EV</text>
+
+      <text class="lbl" x="160" y="12">CLONA · hloubka ostrosti</text>
+      <circle class="node" cx="160" cy="44" r="27" style="stroke:var(--a)"/>
+      <text class="val" id="triA" x="160" y="49">f/8</text>
+
+      <circle class="node" cx="52" cy="206" r="27" style="stroke:var(--t)"/>
+      <text class="val" id="triT" x="52" y="211">1/500</text>
+      <text class="lbl" x="58" y="252">ČAS · pohyb</text>
+
+      <circle class="node" cx="268" cy="206" r="27" style="stroke:var(--i)"/>
+      <text class="val" id="triI" x="268" y="211">100</text>
+      <text class="lbl" x="262" y="252">ISO · šum</text>
+    </svg>
+
+    <div class="group">
+      <div class="group-title">Kolik je ve scéně světla</div>
+      <select id="scene"></select>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Režim fotoaparátu</div>
+      <div class="seg" id="modes">
+        <button data-mode="M" title="Manuál">M · manuál</button>
+        <button data-mode="A" title="Priorita clony">A · priorita clony</button>
+        <button data-mode="S" title="Priorita času">S · priorita času</button>
+      </div>
+      <p class="hint" id="modeHint"></p>
+    </div>
+
+    <div class="ctrl" id="ctrlT" style="--c:var(--t)">
+      <div class="ctrl-head"><span class="dot"></span><label for="sT">Čas závěrky</label><span class="badge">AUTO</span><output id="oT"></output></div>
+      <input type="range" id="sT" min="0" step="1">
+      <div class="ends"><span>krátký · zmrazí pohyb</span><span>dlouhý · rozmaže pohyb</span></div>
+    </div>
+
+    <div class="ctrl" id="ctrlA" style="--c:var(--a)">
+      <div class="ctrl-head"><span class="dot"></span><label for="sA">Clona</label><span class="badge">AUTO</span><output id="oA"></output></div>
+      <input type="range" id="sA" min="0" step="1">
+      <div class="ends"><span>přivřená · víc je ostré</span><span>otevřená · rozmazané pozadí</span></div>
+    </div>
+
+    <div class="ctrl" id="ctrlI" style="--c:var(--i)">
+      <div class="ctrl-head"><span class="dot"></span><label for="sI">ISO (citlivost)</label><output id="oI"></output></div>
+      <input type="range" id="sI" min="0" step="1">
+      <div class="ends"><span>nízké · čistý obraz</span><span>vysoké · šum</span></div>
+    </div>
+    <p class="hint">U všech tří posuvníků platí: jeden krok doprava = 2× víc světla (+1 EV).</p>
+
+    <div class="group">
+      <div class="group-title">Zaostřeno na</div>
+      <div class="seg" id="focus">
+        <button data-focus="front">Květiny vpředu</button>
+        <button data-focus="subj">Cyklistu</button>
+        <button data-focus="back">Stromy vzadu</button>
+      </div>
+    </div>
+
+    <label class="check"><input type="checkbox" id="tripod"> Fotoaparát je na stativu</label>
+
+    <button class="snap" id="snap">📷 Vyfotit</button>
+  </aside>
+</main>
+
+<section>
+  <div class="gal-head">
+    <h2>Pořízené snímky</h2>
+    <button id="clear">Smazat vše</button>
+  </div>
+  <div class="thumbs" id="thumbs"></div>
+</section>
+
+<section>
+  <details>
+    <summary>Jak to funguje</summary>
+    <p><b>Expozice</b> je množství světla, které dopadne na snímač. Ovlivňují ji tři nastavení – a každé z nich má navíc svůj vedlejší účinek:</p>
+    <ul>
+      <li><b>Čas závěrky</b> – jak dlouho je snímač otevřený světlu. Delší čas = víc světla, ale pohyb se rozmaže (a z ruky se roztřese celý snímek).</li>
+      <li><b>Clona</b> – jak velký je otvor v objektivu. Pozor, clonové číslo je zlomek: f/2 je velký otvor (hodně světla), f/16 malý otvor (málo světla). Větší otvor = menší hloubka ostrosti. Záleží i na tom, kam ostříš: když zaostříš na blízké květiny, vzdálené pozadí zůstane trochu neostré i při přivřené cloně.</li>
+      <li><b>ISO</b> – jak moc fotoaparát zesiluje signál ze snímače. Vyšší ISO = světlejší snímek, ale víc šumu.</li>
+    </ul>
+    <p><b>1 EV</b> (expoziční stupeň) znamená dvojnásobek nebo polovinu světla. Stejnou expozici proto dostaneš různými kombinacemi, např. 1/500 s + f/8 = 1/1000 s + f/5,6 = 1/250 s + f/11. Liší se jen vedlejšími účinky.</p>
+    <p>V režimu <b>A</b> (priorita clony) volíš clonu a fotoaparát dopočítá čas, v režimu <b>S</b> (priorita času) volíš čas a fotoaparát dopočítá clonu.</p>
+  </details>
+  <details>
+    <summary>Úkoly k vyzkoušení</summary>
+    <ol>
+      <li>Při ostrém slunci „zmraz“ cyklistu tak, aby byl úplně ostrý – a snímek přitom zůstal správně exponovaný.</li>
+      <li>Vyfoť cyklistu tak, aby bylo vidět, že jede rychle (rozmazaný pohyb), ale cedule zůstala ostrá.</li>
+      <li>Udělej portrét cyklisty: ostrý cyklista, rozmazané pozadí i popředí.</li>
+      <li>Najdi tři různé kombinace se správnou expozicí a porovnej je v galerii.</li>
+      <li>Nastav „Šero“. Dokážeš získat správně exponovaný snímek bez výrazného šumu? Co k tomu potřebuješ a co tím ztratíš?</li>
+    </ol>
+  </details>
+</section>
+
+<footer>Zjednodušená simulace pro výuku – skutečný fotoaparát se chová podobně, ale ne úplně stejně.</footer>
+
+<dialog id="lb"><img alt=""><p></p></dialog>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- Data ---------- */
+const SH = [ // index roste = víc světla
+  ['1/4000',1/4000,-12],['1/2000',1/2000,-11],['1/1000',1/1000,-10],['1/500',1/500,-9],
+  ['1/250',1/250,-8],['1/125',1/125,-7],['1/60',1/60,-6],['1/30',1/30,-5],['1/15',1/15,-4],
+  ['1/8',1/8,-3],['1/4',1/4,-2],['1/2',1/2,-1],['1"',1,0],['2"',2,1]
+].map(([label,sec,stop]) => ({label,sec,stop}));
+const AP = [[22,9],[16,8],[11,7],[8,6],[5.6,5],[4,4],[2.8,3],[2,2],[1.4,1]]
+  .map(([n,stop]) => ({n,stop,label:'f/'+String(n).replace('.',',')}));
+const ISO = [100,200,400,800,1600,3200,6400,12800,25600].map((v,k)=>({v,stop:k}));
+const SCENES = [
+  {name:'Ostré slunce',ev:15},{name:'Zataženo',ev:12},{name:'Hluboký stín',ev:10},
+  {name:'Světlá místnost',ev:8},{name:'Šero',ev:5}
+];
+const NOISE  = [1.2,2,3.2,5,7.5,11,16,23,32];
+const CHROMA = [0.2,0.2,0.3,0.35,0.45,0.55,0.65,0.75,0.85];
+const DEPTH = {far:Infinity, back:25, subj:5, front:2};
+const FOCUS_NAME = {front:'květiny', subj:'cyklista', back:'stromy'};
+
+const state = {t:3, a:3, iso:0, scene:0, mode:'M', focus:'subj', tripod:false};
+
+/* ---------- Plátna ---------- */
+const W=960, H=540, M=72, CW=W+2*M, CH=H+2*M, S=W/800;
+const XL=-M/S-4, XR=(W+M)/S+4, YT=-M/S-4, YB=(H+M)/S+4;
+const SPEED=260, ROAD_Y=425, PERIOD=1060;
+const TW=230, TH=195, TOX=115, TOY=172;
+
+const mk=(w=CW,h=CH)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;};
+const out=document.getElementById('photo');
+const outG=out.getContext('2d',{willReadFrequently:true});
+const LAYERS=['far','back','subj','front'];
+const sharp={}, blurred={};
+LAYERS.forEach(k=>{sharp[k]=mk();blurred[k]=mk();});
+const cyc=mk(), comp=mk(), shake=mk(), tmp=mk(TW,TH), scratch=mk(64,64);
+const cycG=cyc.getContext('2d'), compG=comp.getContext('2d'), shG=shake.getContext('2d'), tmpG=tmp.getContext('2d');
+
+const FILTER_OK=(()=>{try{
+  const c=mk(20,20),g=c.getContext('2d',{willReadFrequently:true});
+  g.filter='blur(3px)';g.fillStyle='#000';g.fillRect(8,8,4,4);g.filter='none';
+  return g.getImageData(4,10,1,1).data[3]>0;
+}catch(e){return false;}})();
+
+function blurInto(g,src,px){
+  if(px<0.35){g.drawImage(src,0,0);return;}
+  if(FILTER_OK){g.filter='blur('+px.toFixed(2)+'px)';g.drawImage(src,0,0);g.filter='none';return;}
+  const s=Math.min(1,1.5/px), w=Math.max(2,Math.round(CW*s)), h=Math.max(2,Math.round(CH*s));
+  scratch.width=w;scratch.height=h;
+  const sg=scratch.getContext('2d');sg.imageSmoothingEnabled=true;sg.imageSmoothingQuality='high';
+  sg.drawImage(src,0,0,w,h);
+  g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';
+  g.drawImage(scratch,0,0,w,h,0,0,CW,CH);
+}
+
+/* ---------- Kreslení scény ---------- */
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function circle(g,x,y,r){g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();}
+function ellipse(g,x,y,rx,ry){g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fill();}
+function cloud(g,x,y,s){ellipse(g,x,y,42*s,18*s);ellipse(g,x+30*s,y-11*s,30*s,20*s);ellipse(g,x-32*s,y+3*s,28*s,13*s);ellipse(g,x+62*s,y+4*s,30*s,13*s);}
+function ridge(g,pts,col,bottom){
+  g.fillStyle=col;g.beginPath();g.moveTo(pts[0][0],bottom);g.lineTo(pts[0][0],pts[0][1]);
+  for(let k=1;k<pts.length-1;k++){g.quadraticCurveTo(pts[k][0],pts[k][1],(pts[k][0]+pts[k+1][0])/2,(pts[k][1]+pts[k+1][1])/2);}
+  const lp=pts[pts.length-1];g.lineTo(lp[0],lp[1]);g.lineTo(lp[0],bottom);g.closePath();g.fill();
+}
+function tree(g,x,base,h,rnd){
+  g.fillStyle='#5b3d24';g.fillRect(x-h*0.05,base-h*0.5,h*0.1,h*0.5);
+  const cols=['#2d5e2a','#376f31','#447f3a','#53924a'];
+  for(let k=0;k<16;k++){
+    const a=rnd()*Math.PI*2, rr=rnd()*h*0.22;
+    g.fillStyle=cols[k<8?(rnd()*2|0):2+(rnd()*2|0)];
+    circle(g,x+Math.cos(a)*rr*1.1,base-h*0.68+Math.sin(a)*rr*0.9,h*(0.12+rnd()*0.1));
+  }
+}
+function house(g,x,base){
+  g.fillStyle='#7d3424';g.fillRect(x+80,base-116,12,30);
+  g.fillStyle='#ead8b0';g.fillRect(x,base-70,110,70);
+  g.fillStyle='#a8452f';g.beginPath();g.moveTo(x-10,base-68);g.lineTo(x+55,base-120);g.lineTo(x+120,base-68);g.closePath();g.fill();
+  g.strokeStyle='#8a3725';g.lineWidth=1.5;
+  for(let k=1;k<5;k++){const y=base-68-k*10;const dx=(52-k*10)*1.25;g.beginPath();g.moveTo(x+55-dx,y);g.lineTo(x+55+dx,y);g.stroke();}
+  g.fillStyle='#5d8fb8';g.fillRect(x+14,base-56,24,22);g.fillRect(x+72,base-56,24,22);
+  g.strokeStyle='#fff';g.lineWidth=2;
+  [[x+14,base-56],[x+72,base-56]].forEach(([wx,wy])=>{g.strokeRect(wx,wy,24,22);g.beginPath();g.moveTo(wx+12,wy);g.lineTo(wx+12,wy+22);g.moveTo(wx,wy+11);g.lineTo(wx+24,wy+11);g.stroke();});
+  g.fillStyle='#6b4428';g.fillRect(x+46,base-42,18,42);
+}
+function flower(g,x,y,r,col,rot){
+  g.fillStyle=col;
+  for(let k=0;k<6;k++){const a=rot+k*Math.PI/3;g.beginPath();g.ellipse(x+Math.cos(a)*r*0.85,y+Math.sin(a)*r*0.85,r*0.75,r*0.4,a,0,Math.PI*2);g.fill();}
+  g.fillStyle=col==='#f7d038'?'#7a4a16':'#f2b705';circle(g,x,y,r*0.42);
+}
+
+function drawFar(g){
+  const sky=g.createLinearGradient(0,0,0,300);
+  sky.addColorStop(0,'#2f73c9');sky.addColorStop(0.75,'#9fcdf0');sky.addColorStop(1,'#cfe7f7');
+  g.fillStyle=sky;g.fillRect(XL,YT,XR-XL,YB-YT);
+  const sg=g.createRadialGradient(690,70,10,690,70,110);
+  sg.addColorStop(0,'rgba(255,250,220,0.95)');sg.addColorStop(0.25,'rgba(255,245,200,0.45)');sg.addColorStop(1,'rgba(255,245,200,0)');
+  g.fillStyle=sg;g.fillRect(570,-50,240,240);
+  g.fillStyle='#fffbe8';circle(g,690,70,24);
+  g.fillStyle='rgba(255,255,255,0.93)';cloud(g,140,90,1.1);cloud(g,420,55,0.8);cloud(g,545,145,0.6);
+  ridge(g,[[XL,232],[60,212],[170,236],[300,196],[430,228],[560,205],[690,230],[XR,214]],'#8aa7c0',330);
+  ridge(g,[[XL,262],[90,246],[230,268],[360,250],[500,270],[640,252],[XR,266]],'#6f9a8a',330);
+}
+function drawBack(g){
+  const rnd=rng(11);
+  const mg=g.createLinearGradient(0,285,0,470);
+  mg.addColorStop(0,'#8cbf5f');mg.addColorStop(1,'#5f9a3e');
+  g.fillStyle=mg;g.fillRect(XL,285,XR-XL,YB-285);
+  for(let k=0;k<220;k++){g.fillStyle=k%3?'rgba(255,255,255,0.55)':'rgba(250,220,80,0.7)';g.fillRect(XL+rnd()*(XR-XL),292+rnd()*75,1.8,1.8);}
+  house(g,465,302);
+  [[-40,300,110],[40,305,120],[140,300,92],[270,310,135],[370,302,88],[640,306,112],[735,312,145],[840,300,100]]
+    .forEach(([x,b,h])=>tree(g,x,b,h,rnd));
+  g.fillStyle='#e9e2d0';g.fillRect(XL,324,XR-XL,3);g.fillRect(XL,335,XR-XL,3);
+  for(let x=-70;x<890;x+=22)g.fillRect(x,318,3.2,26);
+}
+function drawSubj(g){
+  g.fillStyle='#6aa646';g.fillRect(XL,446,XR-XL,YB-446);
+  g.fillStyle='#5a5e66';g.fillRect(XL,366,XR-XL,80);
+  g.fillStyle='#e6e6e6';g.fillRect(XL,368,XR-XL,2.5);g.fillRect(XL,441,XR-XL,2.5);
+  for(let x=-40;x<880;x+=52)g.fillRect(x,403,30,3.5);
+  const sx=650;
+  g.fillStyle='#8a8f96';g.fillRect(sx-3,262,6,106);
+  g.fillStyle='#fff';g.fillRect(sx-44,212,88,62);
+  for(let k=0;k<11;k++){
+    g.fillStyle=k%2?'#111':'#f5c518';g.fillRect(sx-44+k*8,212,8,8);
+    g.fillStyle=k%2?'#f5c518':'#111';g.fillRect(sx-44+k*8,266,8,8);
+  }
+  g.strokeStyle='#111';g.lineWidth=2;g.strokeRect(sx-44,212,88,62);
+  g.fillStyle='#111';g.font='700 27px system-ui, Arial, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('FAV',sx,242);
+}
+function drawFront(g){
+  const rnd=rng(5);
+  const GR=['#2f6b2a','#3d8a35','#4f9e3f','#2a5a26'], FL=['#ffffff','#f7d038','#b388ff','#ff6f61'];
+  for(const [x0,x1] of [[XL,250],[600,XR]]){
+    for(let k=0;k<180;k++){
+      const x=x0+rnd()*(x1-x0);
+      const edge=x0<0?1-(x-x0)/(x1-x0):(x-x0)/(x1-x0);
+      const h=30+rnd()*60+edge*80, lean=(rnd()-0.5)*50;
+      g.strokeStyle=GR[rnd()*4|0];g.lineWidth=2+rnd()*2.5;g.lineCap='round';
+      g.beginPath();g.moveTo(x,485);g.quadraticCurveTo(x+lean*0.2,485-h*0.6,x+lean,485-h-30);g.stroke();
+    }
+    for(let k=0;k<9;k++){
+      const x=x0+40+rnd()*(x1-x0-80), top=330+rnd()*80;
+      g.strokeStyle='#3f7d31';g.lineWidth=2.5;
+      g.beginPath();g.moveTo(x,485);g.quadraticCurveTo(x+8,(485+top)/2,x,top);g.stroke();
+      flower(g,x,top,9+rnd()*5,FL[k%4],rnd()*Math.PI);
+    }
+  }
+}
+function leg(g,hip,foot,col){
+  const L=27, dx=foot[0]-hip[0], dy=foot[1]-hip[1], d=Math.hypot(dx,dy);
+  let knee;
+  if(d>=2*L){knee=[hip[0]+dx/2,hip[1]+dy/2];}
+  else{const h=Math.sqrt(L*L-(d/2)**2);let px=-dy/d,py=dx/d;if(px<0){px=-px;py=-py;}knee=[hip[0]+dx/2+px*h,hip[1]+dy/2+py*h];}
+  g.strokeStyle=col;g.lineWidth=7;g.beginPath();g.moveTo(...hip);g.lineTo(...knee);g.lineTo(...foot);g.stroke();
+}
+function drawCyclist(g,x,y,ang){
+  const r=24, wb=34, rw=[x-wb,y-r], fw=[x+wb,y-r];
+  g.lineCap='round';g.lineJoin='round';
+  for(const [cx,cy] of [rw,fw]){
+    g.strokeStyle='#cfd3d8';g.lineWidth=1.3;g.beginPath();
+    for(let k=0;k<6;k++){const a=ang+k*Math.PI/6;g.moveTo(cx+Math.cos(a)*r*0.92,cy+Math.sin(a)*r*0.92);g.lineTo(cx-Math.cos(a)*r*0.92,cy-Math.sin(a)*r*0.92);}
+    g.stroke();
+    g.strokeStyle='#1a1a1a';g.lineWidth=4.5;g.beginPath();g.arc(cx,cy,r,0,Math.PI*2);g.stroke();
+    g.fillStyle='#888';circle(g,cx,cy,2.5);
+  }
+  const bb=[x-2,y-r+2], seat=[x-14,y-r-32], head=[x+24,y-r-30], bar=[x+20,y-r-42];
+  const ca=ang*0.45, p1=[bb[0]+Math.cos(ca)*10,bb[1]+Math.sin(ca)*10], p2=[bb[0]-Math.cos(ca)*10,bb[1]-Math.sin(ca)*10];
+  const hip=[seat[0]+2,seat[1]-6], sh=[x+12,y-r-74], hd=[x+20,y-r-90];
+  leg(g,hip,p2,'#252a33');
+  g.strokeStyle='#1e63c4';g.lineWidth=4;g.beginPath();
+  g.moveTo(...rw);g.lineTo(...bb);g.lineTo(...seat);g.lineTo(...rw);
+  g.moveTo(...seat);g.lineTo(...head);g.lineTo(...bb);g.moveTo(...head);g.lineTo(...fw);g.stroke();
+  g.strokeStyle='#222';g.lineWidth=3.5;g.beginPath();
+  g.moveTo(seat[0]-7,seat[1]-2);g.lineTo(seat[0]+5,seat[1]-2);g.moveTo(...head);g.lineTo(...bar);g.lineTo(bar[0]+7,bar[1]+3);g.stroke();
+  g.strokeStyle='#444';g.lineWidth=3;g.beginPath();g.moveTo(...p1);g.lineTo(...p2);g.stroke();
+  g.strokeStyle='#d6322f';g.lineWidth=11;g.beginPath();g.moveTo(...hip);g.lineTo(...sh);g.stroke();
+  const el=[(sh[0]+bar[0])/2+5,(sh[1]+bar[1])/2+4];
+  g.lineWidth=6;g.beginPath();g.moveTo(...sh);g.lineTo(...el);g.stroke();
+  g.strokeStyle='#e8b894';g.lineWidth=5;g.beginPath();g.moveTo(...el);g.lineTo(...bar);g.stroke();
+  leg(g,hip,p1,'#3a4050');
+  g.fillStyle='#e8b894';circle(g,hd[0],hd[1],9);
+  g.fillStyle='#f5c518';g.beginPath();g.arc(hd[0]-1,hd[1]-2,10.5,Math.PI*1.05,Math.PI*2.02);g.closePath();g.fill();
+}
+
+const DRAW={far:drawFar,back:drawBack,subj:drawSubj,front:drawFront};
+LAYERS.forEach(k=>{const g=sharp[k].getContext('2d');g.setTransform(S,0,0,S,M,M);DRAW[k](g);});
+
+/* ---------- Model expozice ---------- */
+const offset=()=>SCENES[state.scene].ev+SH[state.t].stop-AP[state.a].stop+ISO[state.iso].stop;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function applyAuto(){
+  const ev=SCENES[state.scene].ev, is=ISO[state.iso].stop;
+  if(state.mode==='A') state.t=clamp(AP[state.a].stop-is-ev+12,0,SH.length-1);
+  if(state.mode==='S') state.a=clamp(9-(ev+SH[state.t].stop+is),0,AP.length-1);
+}
+function blurPx(layer){
+  const df=DEPTH[state.focus], d=DEPTH[layer];
+  // velikost rozptylového kroužku; COC = co je ještě menší, vnímá oko jako ostré
+  const COC=3, raw=150/AP[state.a].n*Math.abs(1/df-1/d);
+  return Math.min(24,Math.max(0,raw-COC));
+}
+
+/* ---------- Šum ---------- */
+const NB_SIZE=1<<20, MASK=NB_SIZE-1, NB=new Float32Array(NB_SIZE);
+for(let k=0;k<NB_SIZE;k+=2){
+  const u=Math.random()||1e-9, v=Math.random(), m=Math.sqrt(-2*Math.log(u));
+  NB[k]=m*Math.cos(2*Math.PI*v);NB[k+1]=m*Math.sin(2*Math.PI*v);
+}
+const LUT=new Float32Array(256);let lutOff=null;
+function buildLut(off){
+  if(off===lutOff)return;lutOff=off;const gain=2**off;
+  for(let k=0;k<256;k++)LUT[k]=255*Math.pow(Math.min(1,Math.pow(k/255,2.2)*gain),1/2.2);
+}
+
+/* ---------- Render ---------- */
+let blurKey='';
+function updateBlurCache(){
+  const key=state.a+'|'+state.focus;if(key===blurKey)return;blurKey=key;
+  LAYERS.forEach(k=>{const g=blurred[k].getContext('2d');g.clearRect(0,0,CW,CH);blurInto(g,sharp[k],blurPx(k));});
+}
+const posX=t=>(((t*SPEED)%PERIOD)+PERIOD)%PERIOD-130;
+
+function render(now){
+  updateBlurCache();
+  const sec=SH[state.t].sec;
+
+  // pohybová neostrost cyklisty: průměr mnoha poloh během otevřené závěrky
+  cycG.globalCompositeOperation='source-over';cycG.globalAlpha=1;cycG.clearRect(0,0,CW,CH);
+  const n=clamp(Math.ceil(SPEED*S*sec/2.5),1,40);
+  cycG.globalCompositeOperation=n>1?'lighter':'source-over';
+  for(let k=0;k<n;k++){
+    const ti=now-sec*(n===1?0:k/(n-1));
+    tmpG.setTransform(1,0,0,1,0,0);tmpG.clearRect(0,0,TW,TH);
+    tmpG.setTransform(S,0,0,S,TOX,TOY);drawCyclist(tmpG,0,0,ti*SPEED/24);
+    cycG.globalAlpha=1/n;
+    cycG.drawImage(tmp,Math.round(M+posX(ti)*S-TOX),Math.round(M+ROAD_Y*S-TOY));
+  }
+  cycG.globalAlpha=1;cycG.globalCompositeOperation='source-over';
+
+  compG.clearRect(0,0,CW,CH);
+  compG.drawImage(blurred.far,0,0);compG.drawImage(blurred.back,0,0);compG.drawImage(blurred.subj,0,0);
+  blurInto(compG,cyc,blurPx('subj'));
+  compG.drawImage(blurred.front,0,0);
+
+  // roztřesení z ruky
+  let src=comp;
+  const shakeLen=state.tripod?0:Math.max(0,Math.log2(sec*60))*4.5*S;
+  if(shakeLen>0.5){
+    shG.globalCompositeOperation='source-over';shG.globalAlpha=1;shG.clearRect(0,0,CW,CH);
+    shG.globalCompositeOperation='lighter';
+    const k=14, th=0.8*Math.sin(now*0.7)+0.5*Math.sin(now*1.9+1);
+    for(let j=0;j<k;j++){
+      const u=j/(k-1)-0.5;
+      shG.globalAlpha=1/k;
+      shG.drawImage(comp,Math.cos(th)*u*shakeLen+Math.sin(u*4)*shakeLen*0.15,Math.sin(th)*u*shakeLen);
+    }
+    shG.globalAlpha=1;shG.globalCompositeOperation='source-over';
+    src=shake;
+  }
+
+  // jas (expozice) + šum (ISO)
+  outG.drawImage(src,M,M,W,H,0,0,W,H);
+  const img=outG.getImageData(0,0,W,H), d=img.data;
+  buildLut(offset());
+  const sig=NOISE[state.iso], chr=CHROMA[state.iso];
+  const o1=(Math.random()*MASK)|0, o2=(Math.random()*MASK)|0;
+  for(let p=0,i=0;i<d.length;p++,i+=4){
+    const r=LUT[d[i]], g=LUT[d[i+1]], b=LUT[d[i+2]];
+    const amp=sig*(1.35-0.0009*(r+g+b));
+    const nl=NB[(p+o1)&MASK]*amp, c=amp*chr;
+    d[i]=r+nl+NB[(i+o2)&MASK]*c;
+    d[i+1]=g+nl+NB[(i+1+o2)&MASK]*c;
+    d[i+2]=b+nl+NB[(i+2+o2)&MASK]*c;
+  }
+  outG.putImageData(img,0,0);
+}
+
+let last=-1e9;
+function frame(ts){
+  requestAnimationFrame(frame);
+  if(ts-last<30)return;last=ts;
+  render(ts/1000);
+}
+
+/* ---------- UI ---------- */
+const $=id=>document.getElementById(id);
+const sT=$('sT'), sA=$('sA'), sI=$('sI');
+sT.max=SH.length-1;sA.max=AP.length-1;sI.max=ISO.length-1;
+
+const scaleEl=$('scale'), barEl=$('bar');
+for(let k=-3;k<=3;k++){
+  const pos=(k+3.5)/7*100+'%';
+  const s=document.createElement('span');s.textContent=k===0?'0':(k>0?'+'+k:'−'+(-k));s.style.left=pos;if(!k)s.className='zero';scaleEl.appendChild(s);
+  const t=document.createElement('i');t.style.left=pos;barEl.appendChild(t);
+}
+SCENES.forEach((s,k)=>{const o=document.createElement('option');o.value=k;o.textContent=s.name+' (EV '+s.ev+')';$('scene').appendChild(o);});
+
+const fmtEV=o=>o===0?'±0 EV':(o>0?'+'+o:'−'+(-o))+' EV';
+const shLabel=k=>SH[k].label+(SH[k].sec<1?' s':'');
+
+function capT(){
+  const s=SH[state.t].sec;let txt;
+  if(s<=1/1000)txt='Velmi krátký čas – zmrazí i rychlý pohyb, cyklista je ostrý.';
+  else if(s<=1/250)txt='Krátký čas – běžný pohyb je zmrazený.';
+  else if(s<=1/60)txt='Rychlý pohyb se začíná lehce rozmazávat.';
+  else if(s<=1/8)txt='Cyklista je rozmazaný – vzniká dojem rychlosti.';
+  else txt='Dlouhý čas – z pohybujících se věcí jsou šmouhy.';
+  if(s>1/60)txt+=state.tripod?' Stativ drží fotoaparát v klidu, nehybné věci zůstávají ostré.':' Fotíš z ruky, takže se roztřese celý snímek – zkus stativ.';
+  return txt;
+}
+function capA(){
+  const n=AP[state.a].n;
+  if(n<=2)return'Clona otevřená naplno – hodně světla, velmi malá hloubka ostrosti. Ostré je jen to, na co je zaostřeno.';
+  if(n<=4)return'Otevřená clona – co není v rovině zaostření, je výrazně rozmazané.';
+  if(n<=8)return'Střední clona – střední hloubka ostrosti.';
+  return'Přivřená clona – málo světla, ale velká hloubka ostrosti. Ostré je skoro všechno.';
+}
+function capI(){
+  const v=ISO[state.iso].v;
+  if(v<=200)return'Nízké ISO – čistý obraz bez šumu.';
+  if(v<=800)return'Střední ISO – šum je skoro nepostřehnutelný.';
+  if(v<=3200)return'Vysoké ISO – v obraze je vidět šum (zrno), hlavně ve stínech.';
+  return'Velmi vysoké ISO – silný šum, barevné tečky, ztráta detailů.';
+}
+function capE(o){
+  let txt;
+  if(o===0)txt='Snímek je exponován správně.';
+  else if(o>0)txt='Přeexponováno o '+o+' EV ('+2**o+'× víc světla, než je potřeba) – světlá místa se slévají do bílé.';
+  else txt='Podexponováno o '+(-o)+' EV ('+2**(-o)+'× méně světla) – snímek je tmavý, ve stínech mizí detaily.';
+  if(o!==0&&state.mode!=='M')txt+=' Automatika už narazila na hranici – změň ISO nebo druhé nastavení.';
+  return txt;
+}
+
+function sync(){
+  applyAuto();
+  sT.value=state.t;sA.value=state.a;sI.value=state.iso;
+  sT.disabled=state.mode==='A';sA.disabled=state.mode==='S';
+  $('ctrlT').classList.toggle('auto',state.mode==='A');
+  $('ctrlA').classList.toggle('auto',state.mode==='S');
+  $('oT').textContent=shLabel(state.t);$('oA').textContent=AP[state.a].label;$('oI').textContent=ISO[state.iso].v;
+  $('lcdT').textContent=SH[state.t].label;$('lcdA').textContent=AP[state.a].label;$('lcdI').textContent='ISO '+ISO[state.iso].v;
+  $('triT').textContent=SH[state.t].label;$('triA').textContent=AP[state.a].label;$('triI').textContent=ISO[state.iso].v;
+
+  const o=offset(), cls=o===0?'st-ok':Math.abs(o)===1?'st-warn':'st-bad';
+  $('needle').style.left=((clamp(o,-3.6,3.6)+3.5)/7*100)+'%';
+  const st=$('expStatus');
+  st.className=cls;
+  st.textContent=o===0?'Správná expozice':(o>0?'Přeexponováno ':'Podexponováno ')+fmtEV(o);
+  const tev=$('triEV');tev.textContent=fmtEV(o);
+  tev.style.fill=o===0?'var(--ok)':Math.abs(o)===1?'var(--warn)':'var(--bad)';
+
+  $('capT').textContent=capT();$('capA').textContent=capA();$('capI').textContent=capI();$('capE').textContent=capE(o);
+
+  document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.mode===state.mode));
+  document.querySelectorAll('[data-focus]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.focus===state.focus));
+  $('modeHint').textContent={
+    M:'Všechna tři nastavení volíš sám/sama.',
+    A:'Ty volíš clonu a ISO, fotoaparát dopočítá čas závěrky.',
+    S:'Ty volíš čas závěrky a ISO, fotoaparát dopočítá clonu.'
+  }[state.mode];
+  $('scene').value=state.scene;$('tripod').checked=state.tripod;
+}
+
+sT.addEventListener('input',()=>{state.t=+sT.value;sync();});
+sA.addEventListener('input',()=>{state.a=+sA.value;sync();});
+sI.addEventListener('input',()=>{state.iso=+sI.value;sync();});
+$('scene').addEventListener('change',e=>{state.scene=+e.target.value;sync();});
+$('tripod').addEventListener('change',e=>{state.tripod=e.target.checked;sync();});
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{state.mode=b.dataset.mode;sync();}));
+document.querySelectorAll('[data-focus]').forEach(b=>b.addEventListener('click',()=>{state.focus=b.dataset.focus;sync();}));
+
+/* ---------- Galerie ---------- */
+const thumbs=$('thumbs'), lb=$('lb');
+$('snap').addEventListener('click',()=>{
+  const fl=$('flash');fl.classList.add('on');requestAnimationFrame(()=>requestAnimationFrame(()=>fl.classList.remove('on')));
+  const url=out.toDataURL('image/jpeg',0.88), o=offset();
+  const main=SH[state.t].label+' · '+AP[state.a].label+' · ISO '+ISO[state.iso].v+' · '+fmtEV(o);
+  const sub=SCENES[state.scene].name+' · ostření: '+FOCUS_NAME[state.focus]+' · '+(state.tripod?'stativ':'z ruky');
+  const f=document.createElement('figure');
+  f.innerHTML='<img alt=""><figcaption></figcaption>';
+  f.querySelector('img').src=url;
+  const fc=f.querySelector('figcaption');fc.textContent=main;const sm=document.createElement('small');sm.textContent=sub;fc.appendChild(sm);
+  f.addEventListener('click',()=>{lb.querySelector('img').src=url;lb.querySelector('p').textContent=main+' — '+sub;lb.showModal();});
+  thumbs.prepend(f);
+  while(thumbs.children.length>12)thumbs.lastChild.remove();
+});
+$('clear').addEventListener('click',()=>{thumbs.innerHTML='';});
+lb.addEventListener('click',()=>lb.close());
+
+sync();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

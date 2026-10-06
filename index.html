@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fotografie v praxi</title>
+<meta name="description" content="Interaktivní cvičení k fotografii: expoziční trojúhelník a kompozice.">
+<style>
+:root{
+  --bg:#121418; --panel:#1b1e24; --panel2:#262a32; --line:#30353f;
+  --text:#eceef1; --muted:#9ba2ad; --accent:#f5b83d;
+  --t:#4fc3f7; --a:#9ccc65; --i:#ff8a65;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:clamp(28px,6vw,64px) 20px 40px}
+.kicker{color:var(--accent);font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:.8rem;margin:0 0 8px}
+h1{font-size:clamp(1.9rem,5vw,2.8rem);line-height:1.1;margin:0 0 12px}
+.lead{color:var(--muted);font-size:1.08rem;max-width:640px;margin:0 0 34px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
+.card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;color:inherit;text-decoration:none;transition:transform .15s,border-color .15s,box-shadow .15s}
+.card:hover,.card:focus-visible{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 12px 34px rgba(0,0,0,.35);outline:none}
+.card svg{display:block;width:100%;height:auto;background:#0d0f12}
+.body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card h2{margin:0;font-size:1.35rem}
+.card p{margin:0;color:#c9cdd3}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.tags span{font-size:.78rem;background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:2px 10px;color:var(--muted)}
+.go{margin-top:auto;padding-top:6px;font-weight:800;color:var(--accent)}
+.card:hover .go{text-decoration:underline}
+.tip{margin-top:34px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px;color:var(--muted);font-size:.92rem}
+.tip b{color:var(--text)}
+footer{max-width:1040px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">Filmová a audiovizuální výchova</p>
+  <h1>Fotografie v praxi</h1>
+  <p class="lead">Dvě interaktivní cvičení, ve kterých si vyzkoušíš, jak funguje fotoaparát a jak poskládat dobrý snímek. Vyber si, čím začneš.</p>
+
+  <div class="grid">
+    <a class="card" href="expozice.html">
+      <svg viewBox="0 0 480 220" aria-hidden="true">
+        <defs>
+          <linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d6fae"/><stop offset="1" stop-color="#cfe7f7"/></linearGradient>
+          <linearGradient id="dark" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity=".55"/><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity=".35"/></linearGradient>
+        </defs>
+        <rect width="480" height="220" fill="url(#sk)"/>
+        <rect y="150" width="480" height="70" fill="#5f9a3e"/>
+        <rect y="168" width="480" height="30" fill="#5a5e66"/>
+        <g fill="#fff" opacity=".9"><rect x="20" y="182" width="26" height="3"/><rect x="80" y="182" width="26" height="3"/><rect x="140" y="182" width="26" height="3"/><rect x="200" y="182" width="26" height="3"/><rect x="260" y="182" width="26" height="3"/><rect x="320" y="182" width="26" height="3"/><rect x="380" y="182" width="26" height="3"/><rect x="440" y="182" width="26" height="3"/></g>
+        <g opacity=".35" stroke="#1e63c4" stroke-width="3" fill="none"><circle cx="196" cy="168" r="11"/><circle cx="226" cy="168" r="11"/></g>
+        <g opacity=".6" stroke="#1e63c4" stroke-width="3" fill="none"><circle cx="216" cy="168" r="11"/><circle cx="246" cy="168" r="11"/></g>
+        <g stroke-width="3" fill="none"><circle cx="236" cy="168" r="11" stroke="#1a1a1a"/><circle cx="266" cy="168" r="11" stroke="#1a1a1a"/><path d="M236 168l12-16 18 16M248 152l-4-12M244 140l12-2" stroke="#1e63c4"/></g>
+        <circle cx="252" cy="122" r="6" fill="#f5c518"/>
+        <path d="M250 128l-4 20" stroke="#d6322f" stroke-width="6" stroke-linecap="round"/>
+        <rect width="480" height="220" fill="url(#dark)"/>
+        <g transform="translate(400 70)">
+          <circle r="44" fill="#1b1e24" stroke="#f5b83d" stroke-width="3"/>
+          <g fill="#2f343d" stroke="#f5b83d" stroke-width="1.5">
+            <path d="M0-38L18-12 0-4z"/><path d="M33-19L22 10 4 2z"/><path d="M33 19L4 16 2-2z" transform="rotate(10)"/><path d="M0 38L-18 12 0 4z"/><path d="M-33 19L-22-10-4-2z"/><path d="M-33-19L-4-16-2 2z" transform="rotate(10)"/>
+          </g>
+          <circle r="8" fill="#0d0f12"/>
+        </g>
+        <g font-family="system-ui,Arial,sans-serif" font-weight="800" font-size="15">
+          <rect x="16" y="16" width="70" height="26" rx="6" fill="rgba(0,0,0,.55)"/><text x="51" y="34" fill="#4fc3f7" text-anchor="middle">1/60</text>
+          <rect x="92" y="16" width="52" height="26" rx="6" fill="rgba(0,0,0,.55)"/><text x="118" y="34" fill="#9ccc65" text-anchor="middle">f/8</text>
+          <rect x="150" y="16" width="80" height="26" rx="6" fill="rgba(0,0,0,.55)"/><text x="190" y="34" fill="#ff8a65" text-anchor="middle">ISO 400</text>
+        </g>
+      </svg>
+      <div class="body">
+        <h2>Expoziční trojúhelník</h2>
+        <p>Nastav čas závěrky, clonu a ISO a sleduj, co se se snímkem děje: jas, zachycení pohybu, hloubka ostrosti i šum.</p>
+        <div class="tags"><span>čas závěrky</span><span>clona</span><span>ISO</span><span>režimy M / A / S</span></div>
+        <span class="go">Spustit cvičení →</span>
+      </div>
+    </a>
+
+    <a class="card" href="kompozice.html">
+      <svg viewBox="0 0 480 220" aria-hidden="true">
+        <defs>
+          <linearGradient id="sky2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3d6fae"/><stop offset=".7" stop-color="#e5d4b6"/><stop offset="1" stop-color="#f4cf9c"/></linearGradient>
+          <linearGradient id="sea2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fc0d2"/><stop offset="1" stop-color="#2b6488"/></linearGradient>
+        </defs>
+        <rect width="480" height="220" fill="url(#sky2)"/>
+        <circle cx="90" cy="92" r="16" fill="#fff6dc"/>
+        <rect y="122" width="480" height="98" fill="url(#sea2)"/>
+        <path d="M0 182q120-12 260-2t220-6V220H0z" fill="#d8c195"/>
+        <path d="M330 220q10-70 60-100 40-12 90-14V220z" fill="#619a3d"/>
+        <path d="M404 220q-30-40 20-80 8-10 10-30" stroke="#dcc596" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <rect x="432" y="72" width="6" height="40" fill="#5d4128"/><circle cx="435" cy="66" r="22" fill="#4a8037"/><circle cx="426" cy="60" r="12" fill="#5b9342"/>
+        <g transform="translate(220 0)">
+          <path d="M-14 120l5-52h18l5 52z" fill="#f4f1ea"/><path d="M-12 102h24v-10h-23zM-10 82h20v-8h-19z" fill="#c8382f"/>
+          <rect x="-8" y="58" width="16" height="10" fill="#ffe7a0"/><path d="M-10 58q10-14 20 0z" fill="#b8322b"/>
+          <ellipse cx="0" cy="122" rx="30" ry="6" fill="#55524d"/>
+          <path d="M-14 124l5 46h18l5-46z" fill="#f4f1ea" opacity=".25"/>
+        </g>
+        <path d="M118 128h52l-6 10h-40z" fill="#1f3c5a"/><path d="M146 126V82l22 44z" fill="#fbf7ee"/><path d="M143 126V88l-20 38z" fill="#efe7d6"/>
+        <g stroke="#fff" stroke-opacity=".85" stroke-width="1.5"><path d="M160 0V220M320 0V220M0 73H480M0 147H480"/></g>
+        <g stroke="#fff" stroke-width="3" fill="none"><path d="M12 32V12h20M448 12h20v20M12 188v20h20M468 188v20h-20"/></g>
+        <g transform="translate(160 73)"><circle r="7" fill="#f5b83d"/></g>
+      </svg>
+      <div class="body">
+        <h2>Kompozice</h2>
+        <p>Fotografuj podle zadání tak, jak se ti to líbí nejvíc. Vodítka ti ukážou, která pravidla kompozice tvůj snímek splňuje.</p>
+        <div class="tags"><span>pravidlo třetin</span><span>horizont</span><span>vodicí linie</span><span>vyvážení</span><span>filmové plány</span></div>
+        <span class="go">Spustit cvičení →</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="tip"><b>Tip:</b> V obou cvičeních můžeš snímky „vyfotit“ do galerie, porovnat je vedle sebe a stáhnout si je. Funguje to na počítači, tabletu i mobilu.</div>
+</div>
+<footer>Zjednodušené simulace pro výuku fotografie.</footer>
+</body>
+</html>

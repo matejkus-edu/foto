@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kompozice ve fotografii</title>
+<meta name="description" content="Interaktivní cvičení kompozice: pravidlo třetin, horizont, vodicí linie, symetrie a filmové plány.">
+<style>
+:root{
+  --bg:#121418; --panel:#1b1e24; --panel2:#262a32; --line:#30353f;
+  --text:#eceef1; --muted:#9ba2ad; --accent:#f5b83d;
+  --ok:#9ccc65; --warn:#ff8a65; --info:#4fc3f7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{max-width:1320px;margin:0 auto;padding:14px 20px 4px}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:.88rem;margin-bottom:8px;padding:4px 10px 4px 8px;border:1px solid var(--line);border-radius:999px}
+.back:hover{color:var(--text);border-color:var(--muted)}
+h1{margin:0 0 4px;font-size:clamp(1.3rem,2.6vw,1.8rem)}
+h2{font-size:1.15rem;margin:0 0 6px}
+header p{margin:0;color:var(--muted)}
+
+.tasks{max-width:1320px;margin:0 auto;padding:10px 20px 0;display:flex;flex-wrap:wrap;gap:6px}
+.tasks button{display:flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:5px 12px 5px 5px;font:inherit;font-size:.9rem;cursor:pointer}
+.tasks button .n{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#3a404b;font-size:.75rem;font-weight:800}
+.tasks button.done .n{background:var(--ok);color:#111}
+.tasks button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#111;font-weight:700}
+.tasks button[aria-pressed="true"] .n{background:#111;color:var(--accent)}
+.tasks button[aria-pressed="true"].done .n{background:#111;color:var(--ok)}
+
+main{max-width:1320px;margin:0 auto;padding:12px 20px 20px;display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:20px;align-items:start}
+@media (max-width:960px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+
+.vfwrap{display:flex;justify-content:center}
+.vf{position:relative;border-radius:4px;overflow:hidden;background:#000;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.vf.drag{cursor:grabbing}
+.vf canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
+#flash.on{opacity:.85;transition:none}
+
+.hud{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;margin-top:10px;color:var(--muted);font-size:.9rem;font-variant-numeric:tabular-nums}
+.hud b{color:var(--text)}
+.planchip{margin-left:auto;border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:3px 12px;color:var(--text)}
+.planchip b{color:var(--accent)}
+.howto{font-size:.85rem;color:var(--muted);margin:6px 0 0}
+
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px 22px;margin-top:12px;align-items:end}
+@media (max-width:640px){.controls{grid-template-columns:1fr}}
+.ctrl-head{display:flex;align-items:center;gap:8px;font-weight:600}
+.ctrl-head output{margin-left:auto;font-weight:800;color:var(--accent);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;margin:6px 0 0;accent-color:var(--accent);height:28px;cursor:pointer}
+.seg{display:flex;gap:4px;background:var(--panel2);padding:4px;border-radius:9px}
+.seg button{flex:1 1 auto;border:0;background:transparent;color:var(--text);padding:7px 6px;border-radius:6px;font:inherit;font-size:.88rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#111;font-weight:700}
+.group-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.snap{width:100%;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#111;font:800 1.05rem system-ui,Arial,sans-serif;cursor:pointer}
+.snap:active{transform:translateY(1px)}
+
+.tnum{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700}
+#tGoal{margin:0;color:#dfe2e6}
+.checks{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:9px}
+.checks li{display:grid;grid-template-columns:22px 1fr;gap:9px;align-items:start}
+.checks .ic{width:21px;height:21px;border-radius:50%;border:2px solid #4a515d;display:grid;place-items:center;font-size:.72rem;font-weight:900;margin-top:1px}
+.checks li.ok .ic{background:var(--ok);border-color:var(--ok);color:#111}
+.checks .hint{display:block;color:var(--warn);font-size:.85rem}
+.checks li.ok .hint{display:none}
+.checks li.sub{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+.checks li.rule .ic{border-style:dashed}
+.checks li.rule.ok .ic{background:var(--info);border-color:var(--info);border-style:solid}
+.checks li.rule .hint{color:var(--muted)}
+.sect{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:14px}
+#tChecks{margin-top:8px}
+.rules{list-style:none;padding:0;margin:0;display:grid;gap:7px}
+.rules li{display:grid;grid-template-columns:20px 1fr;gap:8px;align-items:start;font-size:.92rem}
+.rules .ic{width:18px;height:18px;border-radius:50%;border:2px solid #4a515d;display:grid;place-items:center;font-size:.65rem;font-weight:900;margin-top:2px}
+.rules li.yes .ic{background:var(--info);border-color:var(--info);color:#111}
+.rules li.na{opacity:.45}
+.rules li.na .ic{border-style:dashed}
+.rules li.info .ic{border-color:var(--accent);color:var(--accent);font-style:italic}
+.rules small{display:block;color:var(--muted);font-size:.8rem}
+figcaption .rl{color:#8fc8e6}
+.slots{margin-top:14px}
+.slotrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.slot{background:var(--panel2);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:.82rem;font-weight:700;text-align:center}
+.slot img{display:block;width:100%;aspect-ratio:3/2;object-fit:contain;background:#000}
+.slot .ph{aspect-ratio:3/2;display:grid;place-items:center;color:var(--muted);font-weight:400;font-size:.8rem;border-bottom:1px dashed var(--line)}
+.slot span{display:block;padding:5px}
+.vote{margin-top:10px}
+.vote b{display:block;margin-bottom:6px;font-size:.92rem}
+.vote .hint{color:#d3d6db}
+.plans{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+.plans div{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-size:.8rem;color:var(--muted);line-height:1.3}
+.plans div b{display:block;color:var(--text);font-size:.9rem;margin-bottom:2px}
+.plans div.got{border-color:var(--ok)}
+.plans div.got b::after{content:" ✓";color:var(--ok)}
+.plans div.now{outline:2px solid var(--accent);outline-offset:-1px}
+.task details{margin-top:14px;background:var(--panel2);border-radius:8px;padding:8px 12px}
+.task summary{cursor:pointer;font-weight:700;font-size:.92rem}
+.task details p{margin:8px 0 2px;color:#d3d6db;font-size:.92rem}
+.group{margin-top:18px}
+.toggles{display:flex;flex-wrap:wrap;gap:6px}
+.toggles label{display:flex;align-items:center;gap:6px;background:var(--panel2);border-radius:8px;padding:6px 10px;font-size:.88rem;cursor:pointer}
+.toggles input{width:16px;height:16px;accent-color:var(--accent);margin:0}
+.toggles i{display:inline-block;width:14px;height:3px;border-radius:2px}
+#mini{display:block;width:100%;border-radius:6px;cursor:crosshair;touch-action:none}
+.hint{font-size:.82rem;color:var(--muted);margin:6px 0 0}
+
+section{max-width:1320px;margin:0 auto;padding:0 20px 20px}
+.gal-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}
+.gal-head h2{margin:0;margin-right:auto}
+.gal-head button{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:.85rem;cursor:pointer}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;align-items:start}
+.thumbs:empty::before{content:"Zatím žádné snímky. Tlačítkem „Vyfotit“ ulož aktuální záběr. Ke každému zadání můžeš udělat víc snímků a porovnat je vedle sebe.";color:var(--muted);font-size:.9rem;grid-column:1/-1}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+figure img{display:block;width:100%;cursor:zoom-in;background:#000}
+figcaption{font-size:.8rem;padding:6px 8px;color:#c9cdd3}
+figcaption small{display:block;color:var(--muted)}
+figcaption .ok{color:var(--ok);font-weight:700}
+figcaption .no{color:var(--warn);font-weight:700}
+figcaption a{color:var(--info);font-size:.78rem}
+
+details.gl{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:12px}
+details.gl summary{cursor:pointer;font-weight:700}
+details.gl dt{font-weight:700;margin-top:10px}
+details.gl dd{margin:2px 0 0;color:#d3d6db}
+
+#toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:#2b303a;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 16px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:.25s;max-width:min(92vw,520px);text-align:center;z-index:5}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast.good{border-color:var(--ok)}
+dialog{border:0;padding:0;background:transparent;max-width:min(96vw,1200px)}
+dialog::backdrop{background:rgba(0,0,0,.85)}
+dialog img{display:block;max-width:100%;max-height:84vh;border-radius:6px}
+dialog p{color:#fff;margin:8px 0 0;text-align:center}
+footer{max-width:1320px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+
+<header>
+  <a class="back" href="index.html">← Všechna cvičení</a>
+  <h1>Kompozice ve fotografii</h1>
+  <p>Fotografuj podle zadání tak, jak se ti to líbí nejvíc. Vpravo pro informaci uvidíš, která pravidla kompozice tvůj záběr právě splňuje. Splnit je ale nemusíš.</p>
+</header>
+
+<nav class="tasks" id="tasks" aria-label="Úkoly"></nav>
+
+<main>
+  <div class="card">
+    <div class="vfwrap" id="vfwrap">
+      <div class="vf" id="vf" tabindex="0" aria-label="Hledáček fotoaparátu">
+        <canvas id="view"></canvas>
+        <canvas id="ov"></canvas>
+        <div id="flash"></div>
+      </div>
+    </div>
+    <div class="hud">
+      <span>Přiblížení <b id="hZoom">×1</b></span>
+      <span>Náklon <b id="hRot">0°</b></span>
+      <span>Formát <b id="hFmt">3:2</b></span>
+      <span class="planchip" id="planchip" hidden>Plán: <b id="planName">–</b></span>
+    </div>
+    <p class="howto">Obrazem posouváš tažením (myší nebo prstem). Přibližuješ kolečkem myši, dvěma prsty nebo posuvníkem. Na klávesnici fungují šipky a + / −.</p>
+
+    <div class="controls">
+      <div>
+        <div class="ctrl-head"><label for="zoom">Přiblížení (zoom)</label><output id="oZoom"></output></div>
+        <input type="range" id="zoom" min="0" max="1000" step="1">
+      </div>
+      <div>
+        <div class="ctrl-head"><label for="rot">Náklon fotoaparátu</label><output id="oRot"></output></div>
+        <input type="range" id="rot" min="-30" max="30" step="0.5">
+      </div>
+      <div>
+        <div class="group-title">Formát snímku</div>
+        <div class="seg" id="fmt">
+          <button data-fmt="L">3:2 na šířku</button>
+          <button data-fmt="P">2:3 na výšku</button>
+          <button data-fmt="S">1:1</button>
+        </div>
+      </div>
+      <button class="snap" id="snap">📷 Vyfotit</button>
+    </div>
+  </div>
+
+  <aside class="card">
+    <div class="task">
+      <div class="tnum" id="tNum"></div>
+      <h2 id="tTitle"></h2>
+      <p id="tGoal"></p>
+      <div class="sect" id="needT">Co musí být v záběru</div>
+      <ul class="checks" id="tChecks"></ul>
+      <div class="plans" id="tPlans" hidden></div>
+      <details id="tWhyBox"><summary>Na co myslet</summary><p id="tWhy"></p></details>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Pravidla kompozice – jen pro informaci</div>
+      <ul class="rules" id="rules"></ul>
+      <p class="hint">Pravidla nejsou povinná. Ukazují jen, co tvůj záběr právě splňuje. Dobrý snímek je někdy záměrně porušuje.</p>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Vodítka v hledáčku</div>
+      <div class="toggles">
+        <label><input type="checkbox" data-guide="thirds"><i style="background:#fff"></i>Třetiny</label>
+        <label><input type="checkbox" data-guide="golden"><i style="background:var(--accent)"></i>Zlatý řez</label>
+        <label><input type="checkbox" data-guide="diag"><i style="background:var(--info)"></i>Úhlopříčky</label>
+        <label><input type="checkbox" data-guide="center"><i style="background:#fff"></i>Střed</label>
+        <label><input type="checkbox" data-guide="level"><i style="background:var(--ok)"></i>Vodováha</label>
+        <label><input type="checkbox" data-guide="weight"><i style="background:var(--accent);height:8px;width:8px;border-radius:50%"></i>Těžiště</label>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">Kam se právě díváš</div>
+      <canvas id="mini" aria-label="Mapka celé scény"></canvas>
+      <p class="hint">Žlutý rámeček je tvůj záběr. Když na mapku klepneš nebo po ní táhneš, rychle se přesuneš.</p>
+    </div>
+  </aside>
+</main>
+
+<section>
+  <div class="gal-head">
+    <h2>Pořízené snímky</h2>
+    <button id="clear">Smazat snímky</button>
+    <button id="reset">Vynulovat splněná zadání</button>
+  </div>
+  <div class="thumbs" id="thumbs"></div>
+</section>
+
+<section>
+  <details class="gl">
+    <summary>Slovníček kompozice</summary>
+    <dl>
+      <dt>Vizuální rovnováha (těžiště snímku)</dt>
+      <dd>Výrazné věci, jako jasné slunce, červený maják nebo postava, mají ve snímku „váhu“. Snímek působí vyváženě, když se váhy na obou stranách doplňují: třeba maják vpravo a loďka se sluncem vlevo. Proto někdy funguje lépe kompozice, která pravidla nedodržuje. Vodítko Těžiště ukazuje váhu jen orientačně, rozhoduje tvoje oko. Nevyvážený snímek může být i záměr, protože vyvolává napětí.</dd>
+      <dt>Pravidlo třetin</dt>
+      <dd>Snímek si rozdělíš dvěma svislými a dvěma vodorovnými čarami na devět dílů. Důležité věci umísti na tyto čáry nebo do jejich průsečíků. Snímek pak působí živěji, než když je motiv přesně uprostřed.</dd>
+      <dt>Zlatý řez</dt>
+      <dd>Starší a „přesnější“ příbuzný pravidla třetin (poměr přibližně 0,618 : 0,382). Jeho čáry leží o kousek blíž ke středu.</dd>
+      <dt>Horizont</dt>
+      <dd>Musí být rovně. Obvykle ho dáváme do horní třetiny (hlavní je popředí) nebo do dolní třetiny (hlavní je obloha).</dd>
+      <dt>Prostor ve směru pohybu a pohledu</dt>
+      <dd>Před objektem, který se pohybuje nebo se někam dívá, nech volné místo. Jinak to vypadá, že naráží do okraje snímku.</dd>
+      <dt>Vodicí linie</dt>
+      <dd>Cesty, ploty, řeky nebo koleje vedou pohled diváka. Nejlépe fungují, když začínají u okraje snímku a míří k hlavnímu motivu.</dd>
+      <dt>Symetrie</dt>
+      <dd>Motiv přesně uprostřed, nejčastěji u odrazů a architektury. Působí klidně a slavnostně. Pravidla kompozice se dají porušit, ale vždy s nějakým záměrem.</dd>
+      <dt>Formát</dt>
+      <dd>Na šířku se hodí pro krajinu a děj do stran, na výšku pro vysoké věci a postavy.</dd>
+      <dt>Filmové plány</dt>
+      <dd>Velikost záběru ve filmu: velký celek, celek, polocelek, americký plán, polodetail, detail, velký detail. Čím blíž, tím víc emocí a tím méně prostředí.</dd>
+      <dt>Holandský úhel</dt>
+      <dd>Záměrně nakloněný záběr. Ve filmu vyjadřuje napětí, zmatek nebo nebezpečí.</dd>
+    </dl>
+  </details>
+</section>
+
+<footer>Kreslená scéna pro výuku kompozice. Postup úkolů se ukládá jen v tomto prohlížeči.</footer>
+
+<div id="toast" role="status"></div>
+<dialog id="lb"><img alt=""><p></p></dialog>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const num = (v,d=1) => v.toFixed(d).replace('.', ',').replace(/,0$/, '');
+
+/* ================= Svět ================= */
+const WW=3200, WH=1800, HZ=800, WL=860, FH_MIN=60, FH_MAX=1800;
+const ASPECT={L:1.5, P:2/3, S:1};
+const FMT_NAME={L:'3:2 na šířku', P:'2:3 na výšku', S:'1:1'};
+const SUN={x:520, y:610};
+const LH={x:1100, top:626, lantern:673, bb:{x0:1066,x1:1134,y0:626,y1:862}};
+const BOAT={cx:655, cy:860, bb:{x0:556,x1:750,y0:754,y1:934}};
+const G={x:1450, Ht:795, Ey:838, Ch:871, Sh:885, Wa:1000, Kn:1150, Ft:1282};
+
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const shoreY = x => 1112 + 14*Math.sin(x/180) + 8*Math.sin(x/67+1);
+const LAND=[[1640,1800],[1680,1400],[1760,1160],[1850,1000],[1960,905],[2150,860],[2400,842],[2650,836],[2900,843],[3200,856]];
+function landTop(x){
+  if(x<LAND[0][0]) return Infinity;
+  for(let i=1;i<LAND.length;i++) if(x<=LAND[i][0]){const [x0,y0]=LAND[i-1],[x1,y1]=LAND[i];return y0+(y1-y0)*(x-x0)/(x1-x0);}
+  return LAND[LAND.length-1][1];
+}
+function landLeft(y){
+  const E=LAND.slice(0,5);
+  if(y>=E[0][1]) return E[0][0];
+  for(let i=1;i<E.length;i++) if(y>=E[i][1]){const [x0,y0]=E[i-1],[x1,y1]=E[i];return x0+(x1-x0)*(y-y0)/(y1-y0);}
+  return E[E.length-1][0];
+}
+const PATH=[[2240,1800],[1980,1420],[2700,1130],[2642,842]];
+function bez(t){const u=1-t,a=u*u*u,b=3*u*u*t,c=3*u*t*t,d=t*t*t;return[a*PATH[0][0]+b*PATH[1][0]+c*PATH[2][0]+d*PATH[3][0],a*PATH[0][1]+b*PATH[1][1]+c*PATH[2][1]+d*PATH[3][1]];}
+function bezD(t){const u=1-t,r=[];for(const k of [0,1])r.push(3*u*u*(PATH[1][k]-PATH[0][k])+6*u*t*(PATH[2][k]-PATH[1][k])+3*t*t*(PATH[3][k]-PATH[2][k]));return r;}
+const pathW = t => 10 + 400*Math.pow(1-t,1.8);
+
+/* --- předgenerovaná náhodná data (stejná při každém vykreslení) --- */
+const R=rng(7);
+const CLOUDS=[[300,240,1.2],[1450,190,1],[2650,250,1.1]];
+const WAVES=[];for(let i=0;i<160;i++){const k=Math.pow(R(),1.5),y=HZ+4+k*300;WAVES.push([R()*1720,y,8+k*60*R()+k*25,.5+k*2.4,R()<.75]);}
+const GLIT=[];for(let i=0;i<130;i++){const k=Math.pow(R(),1.3),y=HZ+3+k*290,sp=16+k*170;GLIT.push([SUN.x+(R()+R()-1)*sp,y,3+k*24*R()+2,.7+k*2.2,.3+.55*R()]);}
+const PEB=[];for(let i=0;i<110;i++){const x=R()*1700,y=1140+R()*660;if(y<shoreY(x)+22||x>landLeft(y)-25)continue;PEB.push([x,y,(1.8+R()*4)*(.6+(y-1100)/650),R()]);}
+const GRASS=[];for(let i=0;i<380;i++){const x=1650+R()*1550,top=landTop(x);if(!isFinite(top))continue;const y=top+8+Math.pow(R(),.85)*(1800-top-8);if(x<landLeft(y)+10)continue;const s=.35+(y-830)/650;GRASS.push([x,y,s*(6+R()*11),(R()-.5)*s*7,(R()*4)|0]);}
+const STONES=[];for(let i=0;i<20;i++){const t=R()*.92,o=(R()-.5)*.8;STONES.push([t,o,1.2+(1-t)*5*R()+1]);}
+const TREE=[];{const r=rng(21);for(let i=0;i<40;i++){const a=r()*Math.PI*2,d=Math.sqrt(r());TREE.push([2650+Math.cos(a)*d*150,535+Math.sin(a)*d*110,36+r()*38]);}TREE.sort((a,b)=>b[1]-a[1]);}
+const TREE_BB={x0:Math.min(...TREE.map(c=>c[0]-c[2])),x1:Math.max(...TREE.map(c=>c[0]+c[2])),y0:Math.min(...TREE.map(c=>c[1]-c[2])),y1:842};
+
+/* --- kreslicí pomůcky --- */
+function circle(g,x,y,r){g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();}
+function ellipse(g,x,y,rx,ry,rot=0){g.beginPath();g.ellipse(x,y,rx,ry,rot,0,Math.PI*2);g.fill();}
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();g.fill();}
+function smooth(g,p){g.moveTo(p[0][0],p[0][1]);for(let k=1;k<p.length-1;k++)g.quadraticCurveTo(p[k][0],p[k][1],(p[k][0]+p[k+1][0])/2,(p[k][1]+p[k+1][1])/2);const l=p[p.length-1];g.lineTo(l[0],l[1]);}
+
+function cloud(g,x,y,s){
+  g.fillStyle='rgba(255,252,245,.93)';
+  ellipse(g,x,y,70*s,26*s);ellipse(g,x+45*s,y-18*s,48*s,32*s);ellipse(g,x-45*s,y+4*s,46*s,20*s);ellipse(g,x+95*s,y+5*s,50*s,20*s);ellipse(g,x+8*s,y-30*s,36*s,26*s);
+  g.fillStyle='rgba(215,200,190,.35)';ellipse(g,x+20*s,y+15*s,95*s,9*s);
+}
+function drawLighthouse(g){
+  g.fillStyle='#55524d';g.beginPath();g.moveTo(1022,WL+2);g.quadraticCurveTo(1035,846,1060,842);g.quadraticCurveTo(1100,832,1142,842);g.quadraticCurveTo(1172,848,1182,WL+2);g.closePath();g.fill();
+  g.fillStyle='#78736b';g.beginPath();g.moveTo(1040,851);g.quadraticCurveTo(1070,838,1100,838);g.quadraticCurveTo(1130,838,1160,851);g.quadraticCurveTo(1100,846,1040,851);g.fill();
+  g.save();g.beginPath();g.moveTo(1070,843);g.lineTo(1130,843);g.lineTo(1121,700);g.lineTo(1079,700);g.closePath();g.fillStyle='#f4f1ea';g.fill();g.clip();
+  g.fillStyle='#c8382f';for(const y of [700,750,800])g.fillRect(1060,y,80,25);
+  const sh=g.createLinearGradient(1070,0,1130,0);sh.addColorStop(0,'rgba(255,255,255,.15)');sh.addColorStop(.5,'rgba(0,0,0,0)');sh.addColorStop(1,'rgba(0,0,0,.24)');g.fillStyle=sh;g.fillRect(1060,690,80,160);
+  g.restore();
+  g.fillStyle='#4a3326';g.beginPath();g.moveTo(1093,843);g.lineTo(1093,825);g.arc(1100,825,7,Math.PI,0);g.lineTo(1107,843);g.closePath();g.fill();
+  g.fillStyle='#2b3440';g.fillRect(1096,768,8,11);
+  const gl=g.createRadialGradient(1100,673,2,1100,673,44);gl.addColorStop(0,'rgba(255,240,170,.65)');gl.addColorStop(1,'rgba(255,240,170,0)');g.fillStyle=gl;g.fillRect(1056,629,88,88);
+  g.fillStyle='#2f3338';g.fillRect(1068,696,64,6);
+  g.strokeStyle='#2f3338';g.lineWidth=1.5;g.beginPath();for(let x=1070;x<=1130;x+=6){g.moveTo(x,696);g.lineTo(x,686);}g.moveTo(1068,686);g.lineTo(1132,686);g.stroke();
+  g.fillStyle='#ffe7a0';g.fillRect(1085,661,30,25);
+  g.strokeStyle='#2f3338';g.lineWidth=1.5;g.strokeRect(1085,661,30,25);g.beginPath();g.moveTo(1095,661);g.lineTo(1095,686);g.moveTo(1105,661);g.lineTo(1105,686);g.stroke();
+  g.fillStyle='#b8322b';g.beginPath();g.moveTo(1080,662);g.quadraticCurveTo(1100,628,1120,662);g.closePath();g.fill();
+  g.strokeStyle='#2f3338';g.lineWidth=2;g.beginPath();g.moveTo(1100,646);g.lineTo(1100,630);g.stroke();
+  g.fillStyle='#2f3338';circle(g,1100,628,2.5);
+}
+function drawBoat(g,wake=true){
+  if(wake){g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2.5;g.lineCap='round';g.beginPath();g.moveTo(744,926);g.quadraticCurveTo(800,920,862,915);g.moveTo(738,932);g.quadraticCurveTo(800,938,852,945);g.stroke();}
+  g.fillStyle='#efe7d6';g.beginPath();g.moveTo(667,774);g.quadraticCurveTo(632,850,586,899);g.lineTo(667,899);g.closePath();g.fill();
+  g.fillStyle='#fbf7ee';g.beginPath();g.moveTo(674,762);g.quadraticCurveTo(716,838,740,899);g.lineTo(674,899);g.closePath();g.fill();
+  g.strokeStyle='rgba(0,0,0,.12)';g.lineWidth=1;g.beginPath();g.moveTo(674,820);g.lineTo(712,826);g.moveTo(674,860);g.lineTo(728,866);g.stroke();
+  g.strokeStyle='#5a4632';g.lineWidth=3;g.lineCap='round';g.beginPath();g.moveTo(670,904);g.lineTo(670,756);g.stroke();
+  g.lineWidth=2.5;g.beginPath();g.moveTo(670,900);g.lineTo(742,900);g.stroke();
+  g.fillStyle='#d23b2f';g.beginPath();g.moveTo(670,756);g.lineTo(694,760);g.lineTo(670,765);g.closePath();g.fill();
+  g.fillStyle='#1f3c5a';g.beginPath();g.moveTo(558,903);g.lineTo(748,903);g.lineTo(734,932);g.lineTo(600,932);g.quadraticCurveTo(574,924,558,903);g.closePath();g.fill();
+  g.strokeStyle='#f2f2f2';g.lineWidth=2;g.beginPath();g.moveTo(566,909);g.lineTo(745,909);g.stroke();
+}
+function drawPath(g){
+  const L=[],Rt=[];
+  for(let i=0;i<=48;i++){const t=i/48,[x,y]=bez(t),[dx,dy]=bezD(t),n=Math.hypot(dx,dy)||1,w=pathW(t)/2,nx=-dy/n,ny=dx/n;L.push([x+nx*w,y+ny*w]);Rt.push([x-nx*w,y-ny*w]);}
+  g.beginPath();g.moveTo(L[0][0],L[0][1]);for(const p of L)g.lineTo(p[0],p[1]);for(let i=Rt.length-1;i>=0;i--)g.lineTo(Rt[i][0],Rt[i][1]);g.closePath();
+  const gr=g.createLinearGradient(0,840,0,1800);gr.addColorStop(0,'#c9b386');gr.addColorStop(1,'#e4cd9a');g.fillStyle=gr;g.fill();
+  g.strokeStyle='rgba(110,88,50,.45)';g.lineWidth=3;g.lineJoin='round';
+  for(const side of [L,Rt]){g.beginPath();g.moveTo(side[0][0],side[0][1]);for(const p of side)g.lineTo(p[0],p[1]);g.stroke();}
+  g.fillStyle='rgba(150,130,100,.6)';
+  for(const [t,o,r] of STONES){const [x,y]=bez(t),[dx,dy]=bezD(t),n=Math.hypot(dx,dy);ellipse(g,x-dy/n*o*pathW(t),y+dx/n*o*pathW(t),r*1.4,r);}
+}
+function drawTree(g){
+  g.fillStyle='#5d4128';g.beginPath();g.moveTo(2630,843);g.lineTo(2670,843);g.lineTo(2660,700);g.lineTo(2690,610);g.lineTo(2676,604);g.lineTo(2652,680);g.lineTo(2630,600);g.lineTo(2616,608);g.lineTo(2641,700);g.closePath();g.fill();
+  g.fillStyle='#2b5225';for(const [x,y,r] of TREE)circle(g,x,y+4,r+5);
+  const C=['#3a6c2e','#4a7f37','#5b9342','#6da84e'];
+  for(const [x,y,r] of TREE){const l=(2650-x)/150*.35+(535-y)/110*.65;g.fillStyle=C[clamp(Math.round(1.5+l*1.6),0,3)];circle(g,x,y,r);}
+  g.fillStyle='rgba(170,210,110,.35)';for(let i=0;i<TREE.length;i+=3){const [x,y,r]=TREE[i];if(y<540)circle(g,x-r*.3,y-r*.35,r*.35);}
+}
+function drawGirl(g){
+  const X=G.x;
+  g.fillStyle='rgba(70,50,25,.2)';ellipse(g,X+45,1285,85,10);
+  g.fillStyle='#3b2416';g.beginPath();g.moveTo(X-33,835);g.bezierCurveTo(X-40,780,X+40,780,X+33,835);g.lineTo(X+38,906);g.quadraticCurveTo(X,916,X-38,906);g.closePath();g.fill();
+  g.fillStyle='#3b5b8c';rr(g,X-31,1030,27,236,8);rr(g,X+4,1030,27,236,8);
+  g.fillStyle='rgba(0,0,0,.12)';g.fillRect(X-4,1040,3,220);
+  g.fillStyle='#f4f4f4';rr(g,X-37,1258,37,24,9);rr(g,X+1,1258,37,24,9);
+  g.fillStyle='#cfcfcf';g.fillRect(X-35,1277,33,4);g.fillRect(X+3,1277,33,4);
+  g.strokeStyle='#d8433b';g.lineWidth=20;g.lineCap='round';g.beginPath();g.moveTo(X-38,896);g.lineTo(X-50,1032);g.moveTo(X+38,896);g.lineTo(X+50,1032);g.stroke();
+  g.fillStyle='#f0c39f';circle(g,X-51,1046,10);circle(g,X+51,1046,10);
+  g.fillStyle='#d8433b';g.beginPath();g.moveTo(X-38,889);g.quadraticCurveTo(X,872,X+38,889);g.lineTo(X+36,1000);g.lineTo(X+39,1048);g.lineTo(X-39,1048);g.lineTo(X-36,1000);g.closePath();g.fill();
+  g.strokeStyle='rgba(0,0,0,.18)';g.lineWidth=2;g.strokeRect(X-24,996,48,30);
+  g.beginPath();g.moveTo(X-8,890);g.lineTo(X-6,930);g.moveTo(X+8,890);g.lineTo(X+6,930);g.stroke();
+  g.fillStyle='#b8352e';ellipse(g,X,885,24,8);
+  g.fillStyle='#e9b892';g.fillRect(X-9,860,18,24);
+  g.fillStyle='#f0c39f';ellipse(g,X-29,840,5,8);ellipse(g,X+29,840,5,8);
+  g.fillStyle='#f3c9a5';ellipse(g,X,836,28,35);
+  g.fillStyle='#3b2416';g.beginPath();g.moveTo(X-30,832);g.bezierCurveTo(X-33,788,X+33,788,X+30,832);g.quadraticCurveTo(X+18,812,X+2,817);g.quadraticCurveTo(X-14,810,X-30,832);g.closePath();g.fill();
+  for(const sd of [-11,11]){
+    g.fillStyle='#fff';ellipse(g,X+sd,838,5.6,3.9);
+    g.fillStyle='#5b3a1f';circle(g,X+sd,838.3,3.1);
+    g.fillStyle='#111';circle(g,X+sd,838.3,1.5);
+    g.fillStyle='#fff';circle(g,X+sd-1,837.2,.8);
+    g.strokeStyle='#2a1a10';g.lineWidth=1.2;g.beginPath();g.ellipse(X+sd,838,5.8,4.1,0,Math.PI*1.05,Math.PI*1.95);g.stroke();
+    g.strokeStyle='#3b2416';g.lineWidth=1.8;g.beginPath();g.moveTo(X+sd-6,829);g.quadraticCurveTo(X+sd,825.5,X+sd+6,829);g.stroke();
+  }
+  g.strokeStyle='#c98f6c';g.lineWidth=1.4;g.beginPath();g.moveTo(X,841);g.quadraticCurveTo(X-3,848,X+1,850);g.stroke();
+  g.strokeStyle='#b8473f';g.lineWidth=2;g.beginPath();g.arc(X,852,7.5,Math.PI*.2,Math.PI*.8);g.stroke();
+  g.fillStyle='rgba(235,120,110,.25)';circle(g,X-17,849,5);circle(g,X+17,849,5);
+}
+
+function drawWorld(g){
+  let gr=g.createLinearGradient(0,0,0,HZ);
+  gr.addColorStop(0,'#3d6fae');gr.addColorStop(.5,'#86b2d6');gr.addColorStop(.85,'#e5d4b6');gr.addColorStop(1,'#f4cf9c');
+  g.fillStyle=gr;g.fillRect(0,0,WW,HZ+2);
+  gr=g.createRadialGradient(SUN.x,SUN.y,10,SUN.x,SUN.y,320);
+  gr.addColorStop(0,'rgba(255,244,214,.95)');gr.addColorStop(.2,'rgba(255,230,180,.45)');gr.addColorStop(1,'rgba(255,220,170,0)');
+  g.fillStyle=gr;g.fillRect(SUN.x-320,SUN.y-320,640,HZ-(SUN.y-320));
+  g.fillStyle='#fff6dc';circle(g,SUN.x,SUN.y,40);
+  for(const c of CLOUDS)cloud(g,...c);
+  g.fillStyle='#a3b7c4';g.beginPath();smooth(g,[[1560,HZ+2],[1700,780],[1900,722],[2100,690],[2300,640],[2480,682],[2700,602],[2900,650],[3050,622],[3200,640]]);g.lineTo(3200,960);g.lineTo(1560,960);g.closePath();g.fill();
+  // moře
+  gr=g.createLinearGradient(0,HZ,0,1200);gr.addColorStop(0,'#a9c4d3');gr.addColorStop(.12,'#7aa6c2');gr.addColorStop(1,'#2b6488');
+  g.fillStyle=gr;g.fillRect(0,HZ,WW,460);
+  g.fillStyle='rgba(255,240,215,.5)';g.fillRect(0,HZ,1720,2);
+  for(const [x,y,l,w,a] of GLIT){g.fillStyle=`rgba(255,238,200,${a})`;ellipse(g,x,y,l,w);}
+  g.save();g.globalAlpha=.33;g.translate(0,2*WL);g.scale(1,-1);drawLighthouse(g);g.restore();
+  g.save();g.globalAlpha=.28;g.translate(0,2*932);g.scale(1,-1);drawBoat(g,false);g.restore();
+  g.lineCap='round';
+  for(const [x,y,l,w,light] of WAVES){g.strokeStyle=light?'rgba(255,255,255,.16)':'rgba(15,55,85,.16)';g.lineWidth=w;g.beginPath();g.moveTo(x,y);g.lineTo(x+l,y);g.stroke();}
+  drawLighthouse(g);
+  drawBoat(g);
+  // pláž
+  g.beginPath();g.moveTo(0,shoreY(0));for(let x=25;x<=2000;x+=25)g.lineTo(x,shoreY(x));g.lineTo(2000,WH);g.lineTo(0,WH);g.closePath();
+  gr=g.createLinearGradient(0,1090,0,WH);gr.addColorStop(0,'#bea47a');gr.addColorStop(.06,'#d8c195');gr.addColorStop(1,'#ecdcae');g.fillStyle=gr;g.fill();
+  const shore=off=>{g.beginPath();g.moveTo(0,shoreY(0)+off);for(let x=25;x<=2000;x+=25)g.lineTo(x,shoreY(x)+off);};
+  shore(11);g.strokeStyle='rgba(120,95,60,.22)';g.lineWidth=14;g.stroke();
+  shore(-12);g.strokeStyle='rgba(255,255,255,.35)';g.lineWidth=2;g.stroke();
+  shore(0);g.strokeStyle='rgba(255,255,255,.88)';g.lineWidth=3.5;g.stroke();
+  g.fillStyle='rgba(120,110,100,.45)';for(const [x,y,r,k] of PEB)ellipse(g,x,y,r*1.3,r*.8,k);
+  // kopec se stromem
+  g.beginPath();smooth(g,LAND);g.lineTo(3200,1800);g.closePath();
+  gr=g.createLinearGradient(0,830,0,1800);gr.addColorStop(0,'#88b657');gr.addColorStop(.35,'#619a3d');gr.addColorStop(1,'#4b802f');g.fillStyle=gr;g.fill();
+  g.fillStyle='#6f6a62';for(const [x,y,r] of [[1900,950,20],[1812,1070,22],[1738,1240,24]])ellipse(g,x,y,r*1.3,r*.8);
+  const GC=['#4f8a35','#5f9a3e','#71ac4b','#3f7a2c'];g.lineCap='round';
+  for(const [x,y,h,l,c] of GRASS){g.strokeStyle=GC[c];g.lineWidth=Math.max(1,h*.16);g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+l*.3,y-h*.6,x+l,y-h);g.stroke();}
+  drawPath(g);drawTree(g);
+  drawGirl(g);
+}
+
+/* ================= Stav a geometrie záběru ================= */
+const st={cx:1600,cy:900,fh:1800,th:0,fmt:'L'};
+const rad=()=>st.th*Math.PI/180;
+const fwOf=()=>st.fh*ASPECT[st.fmt];
+function clampState(){
+  const a=ASPECT[st.fmt],t=rad(),c=Math.abs(Math.cos(t)),s=Math.abs(Math.sin(t));
+  const fhMax=Math.min(FH_MAX,WW/(a*c+s),WH/(a*s+c));
+  st.fh=clamp(st.fh,FH_MIN,fhMax);
+  const fw=st.fh*a,hx=fw/2*c+st.fh/2*s,hy=fw/2*s+st.fh/2*c;
+  st.cx=clamp(st.cx,hx,WW-hx);st.cy=clamp(st.cy,hy,WH-hy);
+}
+function uv(x,y){const t=rad(),c=Math.cos(t),s=Math.sin(t),dx=x-st.cx,dy=y-st.cy;return[(dx*c+dy*s)/fwOf()+.5,(-dx*s+dy*c)/st.fh+.5];}
+function bbIn(b,m=.004){for(const [x,y] of [[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]]){const [u,v]=uv(x,y);if(u<-m||u>1+m||v<-m||v>1+m)return false;}return true;}
+function corners(){const t=rad(),c=Math.cos(t),s=Math.sin(t),w=fwOf()/2,h=st.fh/2;return[[-w,-h],[w,-h],[w,h],[-w,h]].map(([x,y])=>[st.cx+x*c-y*s,st.cy+x*s+y*c]);}
+const nearest=(v,a,b)=>Math.abs(v-a)<=Math.abs(v-b)?a:b;
+const hDir=(u,t)=>u<t?'doleva':'doprava';   // otočení fotoaparátu, aby se motiv posunul k cíli
+const vDir=(v,t)=>v<t?'nahoru':'dolů';
+const isLevel=()=>Math.abs(st.th)<.26;
+
+function horizonInfo(){
+  const t=rad(),dy=HZ-st.cy,xw=st.cx-dy*Math.tan(t),v=dy/Math.cos(t)/st.fh+.5;
+  let visible=false;for(let x=0;x<=1540;x+=20){const [uu,vv]=uv(x,HZ);if(uu>=0&&uu<=1&&vv>.02&&vv<.98){visible=true;break;}}
+  return{v,visible};
+}
+
+/* --- filmové plány --- */
+const PLANS=[
+  ['VC','Velký celek','krajina, postava je v ní malá'],
+  ['C','Celek','celá postava i s okolím'],
+  ['PC','Polocelek','celá postava vyplní skoro celou výšku'],
+  ['AP','Americký plán','postava zhruba od kolen nahoru'],
+  ['PD','Polodetail','postava od pasu nahoru'],
+  ['D','Detail','obličej'],
+  ['VD','Velký detail','jen část obličeje, třeba oči']
+];
+const PLAN_NAME=Object.fromEntries(PLANS.map(p=>[p[0],p[1]]));
+function detectPlan(){
+  const [ue,ve]=uv(G.x,G.Ey);
+  if(ue<.03||ue>.97||ve<0||ve>1)return null;
+  const vt=uv(G.x,G.Ht)[1],vf=uv(G.x,G.Ft)[1];
+  const headIn=vt>=-.01,feetIn=vf<=1.01,chinIn=uv(G.x,G.Ch)[1]<=1.01,P=G.Ft-G.Ht,HH=G.Ch-G.Ht;
+  const t=rad(),yb=st.cy+(.5*st.fh+(G.x-st.cx)*Math.sin(t))/Math.cos(t);
+  if(headIn&&feetIn){const r=P/st.fh;return r<.3?'VC':r<.6?'C':'PC';}
+  if((!headIn||!chinIn)&&st.fh<=1.3*HH)return 'VD';
+  if(!headIn&&st.fh<=2.6*HH)return 'D';
+  if(feetIn)return null;
+  if(yb>=G.Kn-.25*(G.Kn-G.Wa))return 'AP';
+  if(yb>=G.Sh+.5*(G.Wa-G.Sh))return 'PD';
+  return 'D';
+}
+
+/* ================= Motivy ve scéně ================= */
+const SUN_BB={x0:478,x1:562,y0:568,y1:652};
+const GIRL_BB={x0:1388,x1:1512,y0:G.Ht,y1:1285};
+const OBJ=[
+  {id:'sun',name:'slunce',bb:SUN_BB,s:1.8},
+  {id:'lighthouse',name:'maják',bb:LH.bb,s:1.6},
+  {id:'refl',name:'odraz majáku',bb:{x0:LH.bb.x0,x1:LH.bb.x1,y0:WL,y1:2*WL-LH.top},s:.6,minor:true},
+  {id:'boat',name:'loďka',bb:BOAT.bb,s:1.3},
+  {id:'girl',name:'dívka',bb:GIRL_BB,s:1.6},
+  {id:'tree',name:'strom',bb:TREE_BB,s:1.1}
+];
+/* vizuální váha motivů – jen orientační odhad */
+function weights(){
+  const A=fwOf()*st.fh,out=[];
+  for(const o of OBJ){
+    const b=o.bb,w=b.x1-b.x0,h=b.y1-b.y0,nx=8,ny=clamp(Math.round(8*h/w),4,32);let n=0,su=0,sv=0;
+    for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){const [u,v]=uv(b.x0+w*(i+.5)/nx,b.y0+h*(j+.5)/ny);if(u>=0&&u<=1&&v>=0&&v<=1){n++;su+=u;sv+=v;}}
+    if(!n)continue;const frac=n/(nx*ny);
+    out.push({id:o.id,name:o.name,minor:o.minor,u:su/n,v:sv/n,frac,w:o.s*Math.sqrt(w*h*frac/A)});
+  }
+  return out;
+}
+const C=(ok,label,hint='')=>({ok,label,hint});
+const sizeH=bb=>(bb.y1-bb.y0)/st.fh, sizeW=bb=>(bb.x1-bb.x0)/fwOf();
+const inFrame=(x,y)=>{const [u,v]=uv(x,y);return u>=0&&u<=1&&v>=0&&v<=1;};
+function seaBehindGirl(){for(const y of [830,900,980,1060])for(const x of [1300,1360,1540,1600])if(inFrame(x,y))return true;return false;}
+function pathEnters(){for(let i=0;i<=60;i++){const [x,y]=bez(i/100),[u,v]=uv(x,y);if(v>=.9&&v<=1.02&&u>=.08&&u<=.92)return true;}return false;}
+function pathVisible(){for(let i=0;i<=100;i+=4){const [x,y]=bez(i/100);if(inFrame(x,y))return true;}return false;}
+
+/* ================= Zadání ================= */
+const TASKS=[
+  {id:'lighthouse',title:'Maják',main:['lighthouse'],
+   goal:'Vyfoť maják tak, aby byl hlavním motivem snímku.',
+   why:'Chceš maják ukázat sám o sobě (třeba na výšku a zblízka), nebo i s mořem a oblohou kolem? Zkus ho posouvat po snímku a sleduj, jak se mění to, jak snímek působí, i to, co ukazují pravidla.',
+   needs(){return[
+     C(bbIn(LH.bb),'Maják je celý v záběru','Část majáku je mimo snímek. Oddal nebo posuň záběr.'),
+     C(sizeH(LH.bb)>=.3,'Maják je dost velký, aby byl hlavním motivem','Maják je ve snímku moc malý. Přibliž.')];}},
+  {id:'boat',title:'Loďka na moři',main:['boat'],
+   goal:'Vyfoť plachetnici na moři. Ať je kolem ní vidět i kus moře a oblohy.',
+   why:'Loďka pluje doleva. Jak snímek působí, když má před sebou volné moře, a jak, když míří přímo k okraji snímku? Kolik oblohy a kolik moře chceš ukázat?',
+   needs(){return[
+     C(bbIn(BOAT.bb),'Loďka je celá v záběru','Část loďky je mimo snímek.'),
+     C(sizeW(BOAT.bb)>=.12,'Loďka je dobře vidět','Loďka je moc malá. Přibliž.'),
+     C(horizonInfo().visible,'Je vidět moře i obloha (horizont)','Natoč fotoaparát tak, aby byl vidět i horizont.')];}},
+  {id:'two',title:'Maják a loďka',main:['lighthouse','boat'],
+   goal:'Vyfoť maják i loďku v jednom snímku.',
+   why:'Dva motivy spolu „soupeří“ o pozornost. Který bude hlavní? Jak je rozmístíš, aby snímek nebyl „nakloněný“ na jednu stranu? Zkus zapnout vodítko Těžiště.',
+   needs(){return[
+     C(bbIn(LH.bb),'Maják je celý v záběru','Část majáku je mimo snímek.'),
+     C(bbIn(BOAT.bb),'Loďka je celá v záběru','Část loďky je mimo snímek.'),
+     C(sizeH(LH.bb)>=.2,'Oba motivy jsou dobře vidět','Motivy jsou moc malé. Přibliž.')];}},
+  {id:'sunset',title:'Slunce nad mořem',main:['sun'],
+   goal:'Vyfoť slunce nad mořem. Ve snímku musí být slunce i horizont.',
+   why:'Slunce je nejjasnější místo snímku a přitahuje pohled, i když je malé. Kolik oblohy a kolik moře ukážeš? Chceš ve snímku i loďku nebo maják, nebo jen slunce a vodu?',
+   needs(){return[
+     C(bbIn(SUN_BB),'Slunce je celé v záběru','Slunce je mimo snímek nebo je uříznuté.'),
+     C(horizonInfo().visible,'Je vidět horizont','Natoč fotoaparát dolů, ať je vidět i moře.')];}},
+  {id:'tree',title:'Strom na kopci',main:['tree'],
+   goal:'Vyfoť osamělý strom na kopci. Celý strom musí být vidět.',
+   why:'Má být ve snímku i cesta? Strom bez cesty působí osaměle a klidně. S cestou, která vede od okraje snímku, získá snímek hloubku a pohled diváka ke stromu „dojde“.',
+   needs(){return[
+     C(bbIn(TREE_BB),'Strom je celý v záběru','Část stromu je mimo snímek.'),
+     C(sizeH(TREE_BB)>=.3,'Strom je dost velký','Strom je moc malý. Přibliž.')];}},
+  {id:'portrait',title:'Portrét u moře',main:['girl'],
+   goal:'Udělej portrét dívky. Musí být vidět její obličej a v pozadí moře.',
+   why:'Kolik místa necháš nad hlavou? Bude dívka uprostřed, nebo na straně? Jak blízko půjdeš? Pod hledáčkem vidíš, jaký filmový plán zrovna máš.',
+   needs(){const p=detectPlan(),[,vc]=uv(G.x,G.Ch),[,ve]=uv(G.x,G.Ey);return[
+     C(!!p&&ve>=0&&vc<=1,'Obličej je v záběru','Najdi dívku na pláži a ať je vidět celý obličej.'),
+     C(['AP','PD','D'].includes(p),'Dívka je hlavní motiv (zhruba od kolen nahoru až po obličej)',p==='VD'?'Jsi moc blízko. Trochu oddal.':'Přibliž se k dívce.'),
+     C(seaBehindGirl(),'V pozadí je vidět moře','Natoč fotoaparát tak, aby bylo za dívkou vidět moře.')];}},
+  {id:'landscape',title:'Celá krajina',main:['lighthouse','boat','tree'],
+   goal:'Vyfoť krajinu, ve které je vidět maják, loďka i strom.',
+   why:'Na takovém snímku je hodně věcí. Co bude hlavní? Kam dáš horizont? Pomoct ti může vodítko Těžiště nebo třetiny, ale rozhoduje tvoje oko.',
+   needs(){return[
+     C(bbIn(LH.bb),'Maják je v záběru','Maják chybí nebo je uříznutý.'),
+     C(bbIn(BOAT.bb),'Loďka je v záběru','Loďka chybí nebo je uříznutá.'),
+     C(bbIn(TREE_BB),'Strom je v záběru','Strom chybí nebo je uříznutý.')];}},
+  {id:'plans',title:'Filmové plány',main:['girl'],plans:true,
+   goal:'Ve filmu se velikost záběru nazývá plán. Vyfoť dívku ve všech sedmi plánech. Aktuální plán vidíš pod hledáčkem.',
+   why:'Čím blíž je kamera, tím víc vidíme, co postava prožívá, a tím méně vidíme prostředí. Režisér plány střídá. Celky ukazují, kde jsme, detaily přibližují emoce.'},
+  {id:'free',title:'Volné focení',free:true,
+   goal:'Fotografuj, co chceš, a zkus z celé scény vytvořit co nejlepší snímek.',
+   why:'Pravidla kompozice nejsou zákony, jsou to pomůcky. Dobrý fotograf je zná a ví, kdy je použít a kdy je záměrně porušit.'}
+];
+const SCORED=TASKS.filter(t=>!t.free);
+
+/* --- postup (jen v tomto prohlížeči) --- */
+const KEY3='fav-kompozice-v3';
+let done=new Set(), plansGot=new Set(), cur=TASKS[0];
+try{const d=JSON.parse(localStorage.getItem(KEY3)||'{}');done=new Set(d.done||[]);plansGot=new Set(d.plans||[]);const t=TASKS.find(t=>t.id===d.last);if(t)cur=t;}catch(e){}
+function save(){try{localStorage.setItem(KEY3,JSON.stringify({done:[...done],plans:[...plansGot],last:cur.id}));}catch(e){}}
+
+/* --- která pravidla záběr právě splňuje (jen informace) --- */
+function analyze(){
+  const ws=weights(),by={};for(const o of ws)by[o.id]=o;
+  const subj=ws.filter(o=>!o.minor&&o.frac>.3);
+  let mains=(cur.main||[]).map(id=>by[id]).filter(o=>o&&o.frac>.3);
+  if(!mains.length&&subj.length)mains=[subj.reduce((a,b)=>b.w>a.w?b:a)];
+  const R=[],h=horizonInfo();
+  if(h.visible){
+    R.push({short:'rovný horizont',label:'Horizont je rovně',ok:isLevel(),val:isLevel()?'ano':`nakloněno o ${num(Math.abs(st.th))}°`});
+    const on3=Math.abs(h.v-1/3)<.05?'na horní třetinové linii':Math.abs(h.v-2/3)<.05?'na dolní třetinové linii':null;
+    R.push({short:'horizont na třetině',label:'Horizont na třetinové linii',ok:!!on3,val:'horizont je '+(on3||(Math.abs(h.v-.5)<.06?'uprostřed':h.v<.5?'v horní části':'v dolní části'))});
+  }else R.push({label:'Horizont rovně a na třetině',ok:null,val:'horizont není v záběru'});
+  if(mains.length){
+    let best=null;
+    for(const m of mains){const du=Math.min(Math.abs(m.u-1/3),Math.abs(m.u-2/3)),dv=Math.min(Math.abs(m.v-1/3),Math.abs(m.v-2/3)),on=du<.05||dv<.05,cross=du<.06&&dv<.06;if(on&&(!best||cross))best={m,cross};}
+    R.push({short:'motiv na třetině',label:'Motiv na třetinové linii',ok:!!best,val:best?`${best.m.name} ${best.cross?'je v průsečíku třetin':'leží na třetinové linii'}`:`${mains.map(m=>m.name).join(', ')} mimo třetinové linie`});
+    const c=mains.find(m=>Math.abs(m.u-.5)<.04);
+    R.push({short:'motiv uprostřed',label:'Motiv uprostřed (symetrie)',ok:!!c,val:c?`${c.name} je uprostřed`:'žádný hlavní motiv není uprostřed'});
+  }else R.push({label:'Motiv na třetině nebo uprostřed',ok:null,val:'v záběru není žádný výrazný motiv'});
+  if(by.boat&&by.boat.frac>.5)R.push({short:'místo před loďkou',label:'Místo před pohybem',ok:by.boat.u>=.55,val:by.boat.u>=.55?'před loďkou je volné moře':'loďka míří k okraji snímku'});
+  else R.push({label:'Místo před pohybem',ok:null,val:'loďka není v záběru'});
+  if(pathVisible()){const ok=pathEnters()&&!!by.tree&&by.tree.frac>.5;R.push({short:'vodicí linie',label:'Vodicí linie',ok,val:ok?'cesta vede od okraje ke stromu':'cesta nevede od dolního okraje ke stromu'});}
+  else R.push({label:'Vodicí linie',ok:null,val:'cesta není v záběru'});
+  if(ws.length){const tot=ws.reduce((a,o)=>a+o.w,0),cu=ws.reduce((a,o)=>a+o.w*o.u,0)/tot,d=cu-.5;
+    R.push({short:'vyvážení',label:'Vyvážení',ok:Math.abs(d)<.1,val:Math.abs(d)<.1?'těžiště je uprostřed':d<0?'snímek „váží“ víc vlevo':'snímek „váží“ víc vpravo'});}
+  const p=detectPlan();if(p)R.push({info:true,label:'Filmový plán',val:PLAN_NAME[p]});
+  if(Math.abs(st.th)>=10)R.push({short:'holandský úhel',label:'Holandský úhel',ok:true,val:'záběr je výrazně nakloněný'});
+  return R;
+}
+
+/* ================= Vykreslování ================= */
+const vf=$('vf'),view=$('view'),ov=$('ov'),mini=$('mini');
+const vg=view.getContext('2d'),og=ov.getContext('2d'),mg=mini.getContext('2d');
+let cssW=0,cssH=0,dpr=1,miniImg=null;
+const guide={thirds:true,golden:false,diag:false,center:false,level:false,weight:false};
+
+function renderTo(g,W,H){
+  g.setTransform(1,0,0,1,0,0);g.fillStyle='#000';g.fillRect(0,0,W,H);
+  g.translate(W/2,H/2);g.rotate(-rad());const s=H/st.fh;g.scale(s,s);g.translate(-st.cx,-st.cy);
+  drawWorld(g);g.setTransform(1,0,0,1,0,0);
+}
+function drawOverlay(){
+  const g=og,W=cssW,H=cssH;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const line=(x1,y1,x2,y2,col,w=1)=>{g.lineCap='butt';g.strokeStyle='rgba(0,0,0,.35)';g.lineWidth=w+2;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();g.strokeStyle=col;g.lineWidth=w;g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();};
+  if(guide.golden)for(const f of [.382,.618]){line(W*f,0,W*f,H,'#f5b83d');line(0,H*f,W,H*f,'#f5b83d');}
+  if(guide.thirds)for(const f of [1/3,2/3]){line(W*f,0,W*f,H,'rgba(255,255,255,.9)');line(0,H*f,W,H*f,'rgba(255,255,255,.9)');}
+  if(guide.diag){line(0,0,W,H,'#4fc3f7');line(W,0,0,H,'#4fc3f7');}
+  if(guide.center){line(W/2,0,W/2,H,'rgba(255,255,255,.45)');line(0,H/2,W,H/2,'rgba(255,255,255,.45)');line(W/2-16,H/2,W/2+16,H/2,'#fff',2);line(W/2,H/2-16,W/2,H/2+16,'#fff',2);}
+  if(guide.level){
+    const t=-rad(),L=Math.min(W,H)*.3,ok=isLevel(),col=ok?'#9ccc65':'#ff8a65',c=Math.cos(t)*L,s=Math.sin(t)*L;
+    line(W/2-L-16,H/2,W/2-L-4,H/2,'#fff',2);line(W/2+L+4,H/2,W/2+L+16,H/2,'#fff',2);
+    line(W/2-c,H/2-s,W/2+c,H/2+s,col,2.5);
+    g.font='700 13px system-ui,Arial,sans-serif';g.textAlign='center';g.fillStyle='rgba(0,0,0,.55)';g.fillText(num(st.th)+'°',W/2+1,H/2+23);g.fillStyle=col;g.fillText(num(st.th)+'°',W/2,H/2+22);
+  }
+  if(guide.weight){
+    const ws=weights();
+    if(ws.length){
+      const tot=ws.reduce((a,o)=>a+o.w,0),cu=ws.reduce((a,o)=>a+o.w*o.u,0)/tot,mm=Math.min(W,H);
+      for(const o of ws){const r=Math.max(5,mm*.42*o.w);g.fillStyle='rgba(245,184,61,.2)';g.strokeStyle='rgba(245,184,61,.9)';g.lineWidth=1.5;g.beginPath();g.arc(o.u*W,o.v*H,r,0,Math.PI*2);g.fill();g.stroke();}
+      const bw=Math.min(240,W*.5),by=H-34,ang=clamp((cu-.5)*.9,-.28,.28),cx=W/2,c=Math.cos(ang)*bw/2,s=Math.sin(ang)*bw/2;
+      g.fillStyle='rgba(0,0,0,.45)';rr(g,cx-bw/2-14,by-30,bw+28,52,10);
+      g.fillStyle='#fff';g.beginPath();g.moveTo(cx,by+2);g.lineTo(cx-8,by+14);g.lineTo(cx+8,by+14);g.closePath();g.fill();
+      line(cx-c,by-s,cx+c,by+s,'#fff',3);
+      const mx=cx+(cu-.5)*2*c,my=by+(cu-.5)*2*s;g.fillStyle='#f5b83d';g.beginPath();g.arc(mx,my-1,7,0,Math.PI*2);g.fill();
+      const d=cu-.5,txt=Math.abs(d)<.1?'těžiště uprostřed – vyvážené':d<0?'těžiště vlevo':'těžiště vpravo';
+      g.font='600 12px system-ui,Arial,sans-serif';g.textAlign='center';g.fillStyle='#fff';g.fillText(txt,cx,by-14);
+    }
+  }
+  g.strokeStyle='rgba(255,255,255,.75)';g.lineWidth=2;const m=10,b=20;g.beginPath();
+  for(const [x,y,dx,dy] of [[m,m,1,1],[W-m,m,-1,1],[m,H-m,1,-1],[W-m,H-m,-1,-1]]){g.moveTo(x,y+dy*b);g.lineTo(x,y);g.lineTo(x+dx*b,y);}
+  g.stroke();
+}
+function drawMini(){
+  const W=mini.width,H=mini.height;if(!W||!miniImg)return;
+  mg.setTransform(1,0,0,1,0,0);mg.drawImage(miniImg,0,0);
+  const k=W/WW,p=corners();
+  mg.beginPath();p.forEach(([x,y],i)=>i?mg.lineTo(x*k,y*k):mg.moveTo(x*k,y*k));mg.closePath();
+  mg.fillStyle='rgba(245,184,61,.18)';mg.fill();mg.strokeStyle='#f5b83d';mg.lineWidth=2*dpr;mg.stroke();
+}
+
+let lastChecks='',lastRules='';
+function updatePanel(){
+  $('hZoom').textContent='×'+num(FH_MAX/st.fh);$('oZoom').textContent='×'+num(FH_MAX/st.fh);
+  $('hRot').textContent=num(st.th)+'°';$('oRot').textContent=num(st.th)+'°';
+  $('hFmt').textContent=FMT_NAME[st.fmt];
+  const p=detectPlan();
+  $('planchip').hidden=!p;$('planName').textContent=p?PLAN_NAME[p]:'';
+  let html='';
+  if(cur.plans)html=PLANS.map(([k,n,d])=>`<div class="${plansGot.has(k)?'got':''} ${p===k?'now':''}"><b>${n}</b>${d}</div>`).join('');
+  else if(cur.needs)html=cur.needs().map(c=>`<li class="${c.ok?'ok':''}"><span class="ic">${c.ok?'✓':''}</span><span>${c.label}<span class="hint">${c.hint}</span></span></li>`).join('');
+  if(html!==lastChecks){(cur.plans?$('tPlans'):$('tChecks')).innerHTML=html;lastChecks=html;}
+  const rh=analyze().map(r=>`<li class="${r.info?'info':r.ok===null?'na':r.ok?'yes':''}"><span class="ic">${r.info?'i':r.ok?'✓':''}</span><span>${r.label}<small>${r.val}</small></span></li>`).join('');
+  if(rh!==lastRules){$('rules').innerHTML=rh;lastRules=rh;}
+}
+let pending=false;
+function requestDraw(){if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;if(!cssW)return;renderTo(vg,view.width,view.height);drawOverlay();drawMini();updatePanel();});}
+function update(){clampState();syncControls();requestDraw();}
+
+function layout(){
+  const a=ASPECT[st.fmt],W=$('vfwrap').clientWidth,maxH=Math.max(280,window.innerHeight*.68);
+  const w=Math.min(W,maxH*a);cssW=Math.round(w);cssH=Math.round(w/a);
+  vf.style.width=cssW+'px';vf.style.height=cssH+'px';
+  dpr=Math.min(2,window.devicePixelRatio||1);
+  for(const c of [view,ov]){c.width=Math.round(cssW*dpr);c.height=Math.round(cssH*dpr);}
+  const mw=mini.parentElement.clientWidth;
+  if(mw>0){const mh=Math.round(mw*WH/WW);mini.style.height=mh+'px';const bw=Math.round(mw*dpr),bh=Math.round(mh*dpr);
+    if(!miniImg||miniImg.width!==bw){mini.width=bw;mini.height=bh;miniImg=document.createElement('canvas');miniImg.width=bw;miniImg.height=bh;const g=miniImg.getContext('2d');g.scale(bw/WW,bh/WH);drawWorld(g);}}
+  requestDraw();
+}
+
+/* ================= Ovládání ================= */
+const zoomEl=$('zoom'),rotEl=$('rot');
+function syncControls(){
+  zoomEl.value=Math.round(Math.log(st.fh/FH_MAX)/Math.log(FH_MIN/FH_MAX)*1000);
+  rotEl.value=st.th;
+  document.querySelectorAll('[data-fmt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.fmt===st.fmt));
+}
+zoomEl.addEventListener('input',()=>{st.fh=FH_MAX*Math.pow(FH_MIN/FH_MAX,zoomEl.value/1000);update();});
+rotEl.addEventListener('input',()=>{st.th=+rotEl.value;update();});
+document.querySelectorAll('[data-fmt]').forEach(b=>b.addEventListener('click',()=>{st.fmt=b.dataset.fmt;clampState();layout();update();}));
+document.querySelectorAll('[data-guide]').forEach(cb=>cb.addEventListener('change',()=>{guide[cb.dataset.guide]=cb.checked;requestDraw();}));
+
+function pan(dxs,dys){const k=st.fh/cssH,t=rad(),c=Math.cos(t),s=Math.sin(t);st.cx-=(dxs*c-dys*s)*k;st.cy-=(dxs*s+dys*c)*k;update();}
+const ptrs=new Map();let pinch=null;
+vf.addEventListener('pointerdown',e=>{vf.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,[e.clientX,e.clientY]);vf.classList.add('drag');
+  if(ptrs.size===2){const [a,b]=[...ptrs.values()];pinch={d:Math.hypot(a[0]-b[0],a[1]-b[1]),fh:st.fh};}});
+vf.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;const p=ptrs.get(e.pointerId),q=[e.clientX,e.clientY];ptrs.set(e.pointerId,q);
+  if(ptrs.size===1)pan(q[0]-p[0],q[1]-p[1]);
+  else if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()];st.fh=pinch.fh*pinch.d/Math.max(10,Math.hypot(a[0]-b[0],a[1]-b[1]));update();}});
+const endPtr=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)vf.classList.remove('drag');};
+['pointerup','pointercancel','lostpointercapture'].forEach(t=>vf.addEventListener(t,endPtr));
+vf.addEventListener('wheel',e=>{e.preventDefault();st.fh*=Math.exp(e.deltaY*.0015);update();},{passive:false});
+document.addEventListener('keydown',e=>{
+  if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;
+  const s=40;let used=true;
+  if(e.key==='ArrowLeft')pan(s,0);else if(e.key==='ArrowRight')pan(-s,0);else if(e.key==='ArrowUp')pan(0,s);else if(e.key==='ArrowDown')pan(0,-s);
+  else if(e.key==='+'||e.key==='='){st.fh/=1.15;update();}else if(e.key==='-'){st.fh*=1.15;update();}else used=false;
+  if(used)e.preventDefault();
+});
+function miniPick(e){const r=mini.getBoundingClientRect();st.cx=(e.clientX-r.left)/r.width*WW;st.cy=(e.clientY-r.top)/r.height*WH;update();}
+let miniDown=false;
+mini.addEventListener('pointerdown',e=>{miniDown=true;mini.setPointerCapture(e.pointerId);miniPick(e);});
+mini.addEventListener('pointermove',e=>{if(miniDown)miniPick(e);});
+['pointerup','pointercancel'].forEach(t=>mini.addEventListener(t,()=>miniDown=false));
+
+/* --- úkoly --- */
+function renderTaskButtons(){
+  $('tasks').innerHTML='';
+  TASKS.forEach((t,i)=>{const b=document.createElement('button');
+    b.innerHTML=`<span class="n">${t.free?'★':(done.has(t.id)?'✓':i+1)}</span>${t.title}`;
+    b.setAttribute('aria-pressed',t===cur);if(done.has(t.id))b.classList.add('done');
+    b.addEventListener('click',()=>selectTask(t));$('tasks').appendChild(b);});
+}
+function updateTNum(){const t=cur;$('tNum').textContent=t.free?'Bez zadání':`Zadání ${SCORED.indexOf(t)+1} z ${SCORED.length}`+(done.has(t.id)?' · splněno ✓':'');}
+function selectTask(t){
+  cur=t;Object.assign(st,{cx:1600,cy:900,fh:1800,th:0,fmt:'L'});
+  updateTNum();$('tTitle').textContent=t.title;$('tGoal').textContent=t.goal;$('tWhy').textContent=t.why;
+  $('needT').hidden=!t.needs;$('tChecks').hidden=!t.needs;$('tPlans').hidden=!t.plans;
+  lastChecks='';$('tChecks').innerHTML='';$('tPlans').innerHTML='';
+  renderTaskButtons();save();clampState();layout();update();
+}
+document.querySelectorAll('[data-guide]').forEach(cb=>cb.checked=guide[cb.dataset.guide]);
+
+/* --- toast --- */
+let toastT=0;
+function toast(msg,good=false){const t=$('toast');t.textContent=msg;t.className='on'+(good?' good':'');clearTimeout(toastT);toastT=setTimeout(()=>t.className='',3200);}
+
+/* --- focení a galerie --- */
+const thumbs=$('thumbs'),lb=$('lb');
+$('snap').addEventListener('click',()=>{
+  const fl=$('flash');fl.classList.add('on');requestAnimationFrame(()=>requestAnimationFrame(()=>fl.classList.remove('on')));
+  const H=720,W=Math.round(H*ASPECT[st.fmt]),c=document.createElement('canvas');c.width=W;c.height=H;renderTo(c.getContext('2d'),W,H);
+  const url=c.toDataURL('image/jpeg',.9),plan=detectPlan(),rules=analyze().filter(r=>r.ok===true&&r.short).map(r=>r.short);
+  let verdict='';
+  if(cur.plans){
+    if(plan){const isNew=!plansGot.has(plan);plansGot.add(plan);verdict=`<span class="ok">${PLAN_NAME[plan]}</span>`;
+      if(plansGot.size===PLANS.length&&!done.has('plans')){done.add('plans');toast('Zadání splněno! Máš všech sedm filmových plánů. 🎬',true);}
+      else toast(isNew?`${PLAN_NAME[plan]}: ve sbírce máš ${plansGot.size} ze 7 plánů.`:`${PLAN_NAME[plan]} už ve sbírce máš. Zkus jiný plán.`,isNew);}
+    else{verdict='<span class="no">dívka není v záběru</span>';toast('Dívka není v záběru, tenhle snímek se do sbírky nepočítá.');}
+  }else if(cur.needs){
+    const ok=cur.needs().every(x=>x.ok);verdict=ok?'<span class="ok">✓ splněno</span>':'<span class="no">✗ chybí obsah</span>';
+    if(ok){const first=!done.has(cur.id);done.add(cur.id);toast(first?'Zadání splněno! 🎉 Snímek najdeš v galerii.':'Další snímek k tomuto zadání je v galerii. Porovnej je.',true);}
+    else toast('Snímek je v galerii, ale ještě v něm chybí, co zadání požaduje. Podívej se vpravo.');
+  }
+  save();renderTaskButtons();updateTNum();lastChecks='';requestDraw();
+  const n=thumbs.children.length+1,info=`${FMT_NAME[st.fmt]} · ×${num(FH_MAX/st.fh)}${st.th?` · náklon ${num(st.th)}°`:''}${plan?' · '+PLAN_NAME[plan]:''}`;
+  const rtxt=rules.length?'Pravidla: '+rules.join(', '):'Žádné z pravidel';
+  const f=document.createElement('figure');
+  f.innerHTML=`<img alt=""><figcaption><b>${cur.title}</b> ${verdict}<small>${info}</small><small class="rl">${rtxt}</small><a download="kompozice-${n}.jpg">Stáhnout</a></figcaption>`;
+  const img=f.querySelector('img');img.src=url;f.querySelector('a').href=url;
+  const title=cur.title;
+  img.addEventListener('click',()=>{lb.querySelector('img').src=url;lb.querySelector('p').textContent=`${title} · ${info} · ${rtxt}`;lb.showModal();});
+  thumbs.prepend(f);while(thumbs.children.length>20)thumbs.lastChild.remove();
+});
+$('clear').addEventListener('click',()=>{thumbs.innerHTML='';});
+$('reset').addEventListener('click',()=>{done.clear();plansGot.clear();save();selectTask(cur);toast('Postup byl vynulován.');});
+lb.addEventListener('click',()=>lb.close());
+
+window.addEventListener('resize',layout);
+if(window.ResizeObserver)new ResizeObserver(layout).observe($('vfwrap'));
+selectTask(cur);
+
+/* ladicí přístup (pro učitele / testy) */
+window.kompozice={st,update,detectPlan,weights,analyze,needs:()=>cur.needs?cur.needs():[],select:id=>selectTask(TASKS.find(t=>t.id===id))};
+})();
+</script>
+</body>
+</html>
