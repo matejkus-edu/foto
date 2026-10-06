@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kamera a záběr</title>
-<meta name="description" content="Interaktivní ukázka filmových plánů, rakursu, roviny záběru a formátu obrazu.">
+<meta name="description" content="Interaktivní ukázka filmových velikostí záběru, rakursu, roviny záběru a formátu obrazu.">
 <style>
 :root{
   --bg:#121418; --panel:#1b1e24; --panel2:#262a32; --line:#30353f;
@@ -61,7 +61,7 @@ section{max-width:1440px;margin:0 auto;padding:0 20px 20px}
 .gal-head h2{margin:0;font-size:1.1rem}
 .gal-head button{margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:.85rem;cursor:pointer}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:start}
-.thumbs:empty::before{content:"Zatím žádné snímky. Tlačítkem „Vyfotit“ si ulož aktuální záběr a porovnej různé plány, rakursy a formáty vedle sebe.";color:var(--muted);font-size:.9rem;grid-column:1/-1}
+.thumbs:empty::before{content:"Zatím žádné snímky. Tlačítkem „Vyfotit“ si ulož aktuální záběr a porovnej různé velikosti záběru, rakursy a formáty vedle sebe.";color:var(--muted);font-size:.9rem;grid-column:1/-1}
 figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 figure .ph{background:#050608;display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;cursor:zoom-in}
 figure img{display:block;max-width:100%;max-height:100%}
@@ -83,7 +83,7 @@ footer{max-width:1440px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
 
 <header>
   <div class="hrow"><a class="back" href="index.html">← Všechna cvičení</a><h1>Kamera a záběr</h1></div>
-  <p>Přepínej plán, rakurs, rovinu a formát a sleduj, jak se mění obraz i to, jak postava působí.</p>
+  <p>Přepínej velikost záběru, rakurs, rovinu a formát a sleduj, jak se mění obraz i to, jak postava působí.</p>
 </header>
 
 <main>
@@ -96,7 +96,7 @@ footer{max-width:1440px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
 
     <div class="controls">
       <div class="full" style="--c:var(--p)">
-        <div class="ctl-title"><span class="dot"></span>Velikost záběru (plán)</div>
+        <div class="ctl-title"><span class="dot"></span>Velikost záběru</div>
         <div class="seg" id="plans"></div>
       </div>
       <div style="--c:var(--r)">
@@ -130,7 +130,7 @@ footer{max-width:1440px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
     <details class="try">
       <summary>Zkus to</summary>
       <ol>
-        <li>Vyfoť postavu ve všech sedmi plánech a seřaď snímky od nejširšího po nejbližší.</li>
+        <li>Vyfoť postavu ve všech sedmi velikostech záběru a seřaď snímky od nejširšího po nejbližší.</li>
         <li>Vyfoť polodetail v podhledu a pak v nadhledu. Jak postava působí v jednom a jak ve druhém?</li>
         <li>Najdi záběr, ve kterém postava působí jako hrdina, a záběr, kde působí ztraceně a bezmocně.</li>
         <li>Porovnej celek ve formátu 2,39:1 a 9:16. Co se do záběru vešlo a co ne?</li>
@@ -152,7 +152,7 @@ footer{max-width:1440px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
   <details class="gl">
     <summary>Slovníček</summary>
     <dl>
-      <dt>Plán (velikost záběru)</dt>
+      <dt>Velikost záběru</dt>
       <dd>Kolik z postavy a prostředí je v záběru vidět: velký celek, celek, polocelek, americký plán, polodetail, detail a velký detail. Čím blíž, tím víc emocí a tím méně prostředí.</dd>
       <dt>Rakurs (úhel záběru)</dt>
       <dd>Z jaké výšky a pod jakým úhlem se kamera dívá: žabí perspektiva, podhled, přímý pohled (v úrovni očí), nadhled a ptačí perspektiva. Podhled postavu zvětšuje a dodává jí sílu, nadhled ji zmenšuje a oslabuje.</dd>
