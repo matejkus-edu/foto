@@ -709,7 +709,19 @@ vf.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;const p=p
   else if(ptrs.size===2&&pinch){const [a,b]=[...ptrs.values()];st.fh=pinch.fh*pinch.d/Math.max(10,Math.hypot(a[0]-b[0],a[1]-b[1]));update();}});
 const endPtr=e=>{ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(!ptrs.size)vf.classList.remove('drag');};
 ['pointerup','pointercancel','lostpointercapture'].forEach(t=>vf.addEventListener(t,endPtr));
-vf.addEventListener('wheel',e=>{e.preventDefault();st.fh*=Math.exp(e.deltaY*.0015);update();},{passive:false});
+vf.addEventListener('wheel',e=>{
+  e.preventDefault();
+  // sjednocení jednotek (řádky / stránky → pixely) a omezení velikosti jednoho kroku
+  let d=e.deltaY*(e.deltaMode===1?33:e.deltaMode===2?600:1);
+  d=clamp(d,-100,100);
+  // přibližování ke kurzoru: bod pod myší zůstane na místě
+  const r=vf.getBoundingClientRect(),sx=e.clientX-r.left-cssW/2,sy=e.clientY-r.top-cssH/2;
+  const t=rad(),c=Math.cos(t),s=Math.sin(t),k0=st.fh/cssH;
+  const px=st.cx+(sx*c-sy*s)*k0,py=st.cy+(sx*s+sy*c)*k0;
+  st.fh*=Math.exp(d*.0005);clampState();
+  const k1=st.fh/cssH;st.cx=px-(sx*c-sy*s)*k1;st.cy=py-(sx*s+sy*c)*k1;
+  update();
+},{passive:false});
 document.addEventListener('keydown',e=>{
   if(['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName))return;
   const s=40;let used=true;
