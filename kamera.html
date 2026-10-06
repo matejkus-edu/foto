@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kamera a záběr</title>
+<meta name="description" content="Interaktivní ukázka filmových plánů, rakurzu, roviny záběru a formátu obrazu.">
+<style>
+:root{
+  --bg:#121418; --panel:#1b1e24; --panel2:#262a32; --line:#30353f;
+  --text:#eceef1; --muted:#9ba2ad; --accent:#f5b83d;
+  --p:#4fc3f7; --r:#9ccc65; --l:#ff8a65; --f:#c39bff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{max-width:1440px;margin:0 auto;padding:12px 20px 0}
+.hrow{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:.88rem;padding:4px 10px 4px 8px;border:1px solid var(--line);border-radius:999px}
+.back:hover{color:var(--text);border-color:var(--muted)}
+h1{margin:0;font-size:clamp(1.25rem,2.2vw,1.6rem)}
+header p{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+main{max-width:1440px;margin:0 auto;padding:10px 20px 20px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+@media (max-width:960px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+
+.stage{position:relative;aspect-ratio:16/9;width:min(100%,max(420px,calc((100vh - 395px)*16/9)));margin:0 auto;background:#050608;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+#pic{display:block}
+.fmtlabel{position:absolute;right:10px;bottom:8px;font-size:.75rem;color:#6b727d;font-weight:700;letter-spacing:.04em;pointer-events:none}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
+#flash.on{opacity:.85;transition:none}
+
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;margin-top:8px}
+.controls .full{grid-column:1/-1}
+@media (max-width:760px){.controls{grid-template-columns:1fr}}
+.ctl-title{display:flex;align-items:center;gap:8px;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px}
+.ctl-title .dot{width:9px;height:9px;border-radius:50%;background:var(--c)}
+.ctl-title output{margin-left:auto;text-transform:none;letter-spacing:0;font-size:.9rem;font-weight:800;color:var(--c)}
+.seg{display:flex;flex-wrap:wrap;gap:4px;background:var(--panel2);padding:4px;border-radius:9px}
+.seg button{flex:1 1 auto;border:0;background:transparent;color:var(--text);padding:5px 8px;border-radius:6px;font:inherit;font-size:.86rem;cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--c,var(--accent));color:#111;font-weight:700}
+input[type=range]{width:100%;margin:4px 0 0;accent-color:var(--c);height:20px;cursor:pointer}
+
+.snap{width:100%;padding:13px;border:0;border-radius:10px;background:var(--accent);color:#111;font:800 1.05rem system-ui,Arial,sans-serif;cursor:pointer}
+.snap:active{transform:translateY(1px)}
+.group{margin-top:16px}
+.group-title{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.info{display:grid;gap:10px}
+.info div{border-left:3px solid var(--c);padding:2px 0 2px 10px}
+.info b{display:block;font-size:.95rem}
+.info span{display:block;color:#cfd3d8;font-size:.86rem;line-height:1.4}
+.info em{display:block;color:var(--accent);font-style:normal;font-size:.8rem;margin-top:3px}
+#side{display:block;width:100%;height:170px;border-radius:8px;background:#0f1216}
+.hint{font-size:.82rem;color:var(--muted);margin:6px 0 0}
+details.try{margin-top:16px;background:var(--panel2);border-radius:8px;padding:8px 12px}
+details.try summary{cursor:pointer;font-weight:700;font-size:.92rem}
+details.try ol{margin:8px 0 4px;padding-left:20px;color:#d3d6db;font-size:.88rem}
+details.try li{margin-bottom:4px}
+
+section{max-width:1440px;margin:0 auto;padding:0 20px 20px}
+.gal-head{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.gal-head h2{margin:0;font-size:1.1rem}
+.gal-head button{margin-left:auto;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:5px 10px;font:inherit;font-size:.85rem;cursor:pointer}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:start}
+.thumbs:empty::before{content:"Zatím žádné snímky. Tlačítkem „Vyfotit“ si ulož aktuální záběr a porovnej různé plány, rakurzy a formáty vedle sebe.";color:var(--muted);font-size:.9rem;grid-column:1/-1}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+figure .ph{background:#050608;display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;cursor:zoom-in}
+figure img{display:block;max-width:100%;max-height:100%}
+figcaption{font-size:.8rem;padding:6px 8px;color:#c9cdd3}
+figcaption small{display:block;color:var(--muted)}
+figcaption a{color:var(--p);font-size:.78rem}
+dialog{border:0;padding:0;background:transparent;max-width:min(96vw,1300px)}
+dialog::backdrop{background:rgba(0,0,0,.88)}
+dialog img{display:block;max-width:100%;max-height:84vh;border-radius:6px}
+dialog p{color:#fff;margin:8px 0 0;text-align:center}
+details.gl{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:12px}
+details.gl summary{cursor:pointer;font-weight:700}
+details.gl dt{font-weight:700;margin-top:10px}
+details.gl dd{margin:2px 0 0;color:#d3d6db}
+footer{max-width:1440px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow"><a class="back" href="index.html">← Všechna cvičení</a><h1>Kamera a záběr</h1></div>
+  <p>Přepínej plán, rakurz, rovinu a formát a sleduj, jak se mění obraz i to, jak postava působí.</p>
+</header>
+
+<main>
+  <div class="card">
+    <div class="stage" id="stage">
+      <canvas id="pic" aria-label="Záběr kamery"></canvas>
+      <div id="flash"></div>
+      <div class="fmtlabel" id="fmtLabel"></div>
+    </div>
+
+    <div class="controls">
+      <div class="full" style="--c:var(--p)">
+        <div class="ctl-title"><span class="dot"></span>Velikost záběru (plán)</div>
+        <div class="seg" id="plans"></div>
+      </div>
+      <div style="--c:var(--r)">
+        <div class="ctl-title"><span class="dot"></span>Úhel záběru (rakurz)<output id="oAng"></output></div>
+        <div class="seg" id="rakurs"></div>
+        <input type="range" id="ang" min="-60" max="60" step="1" aria-label="Úhel kamery">
+      </div>
+      <div style="--c:var(--l)">
+        <div class="ctl-title"><span class="dot"></span>Rovina záběru<output id="oRoll"></output></div>
+        <div class="seg" id="roll"><button data-roll="0">Vyrovnaná</button><button data-roll="15">Nakloněná</button></div>
+        <input type="range" id="rollR" min="-30" max="30" step="1" aria-label="Náklon kamery">
+      </div>
+      <div class="full" style="--c:var(--f)">
+        <div class="ctl-title"><span class="dot"></span>Formát obrazu</div>
+        <div class="seg" id="fmts"></div>
+      </div>
+    </div>
+  </div>
+
+  <aside class="card">
+    <button class="snap" id="snap">📷 Vyfotit záběr</button>
+    <div class="group">
+      <div class="group-title">Co právě vidíš</div>
+      <div class="info" id="info"></div>
+    </div>
+    <div class="group">
+      <div class="group-title">Kde stojí kamera (pohled z boku)</div>
+      <canvas id="side"></canvas>
+      <p class="hint" id="camTxt"></p>
+    </div>
+    <details class="try">
+      <summary>Zkus to</summary>
+      <ol>
+        <li>Vyfoť postavu ve všech sedmi plánech a seřaď snímky od nejširšího po nejbližší.</li>
+        <li>Vyfoť polodetail v podhledu a pak v nadhledu. Jak postava působí v jednom a jak ve druhém?</li>
+        <li>Najdi záběr, ve kterém postava působí jako hrdina, a záběr, kde působí ztraceně a bezmocně.</li>
+        <li>Porovnej celek ve formátu 2,39:1 a 9:16. Co se do záběru vešlo a co ne?</li>
+        <li>Kdy bys ve svém filmu použil/a nakloněnou rovinu?</li>
+      </ol>
+    </details>
+  </aside>
+</main>
+
+<section>
+  <div class="gal-head">
+    <h2>Pořízené záběry</h2>
+    <button id="clear">Smazat vše</button>
+  </div>
+  <div class="thumbs" id="thumbs"></div>
+</section>
+
+<section>
+  <details class="gl">
+    <summary>Slovníček</summary>
+    <dl>
+      <dt>Plán (velikost záběru)</dt>
+      <dd>Kolik z postavy a prostředí je v záběru vidět: velký celek, celek, polocelek, americký plán, polodetail, detail a velký detail. Čím blíž, tím víc emocí a tím méně prostředí.</dd>
+      <dt>Rakurz (úhel záběru)</dt>
+      <dd>Z jaké výšky a pod jakým úhlem se kamera dívá: žabí perspektiva, podhled, přímý pohled (v úrovni očí), nadhled a ptačí perspektiva. Podhled postavu zvětšuje a dodává jí sílu, nadhled ji zmenšuje a oslabuje.</dd>
+      <dt>Rovina záběru</dt>
+      <dd>Vyrovnaná rovina má horizont vodorovně a působí klidně. Nakloněná rovina (holandský úhel) vyvolává napětí, nejistotu nebo zmatek.</dd>
+      <dt>Formát (poměr stran)</dt>
+      <dd>Poměr šířky a výšky obrazu. Mění se v historii filmu i podle toho, kde se obraz promítá: v kině, v televizi nebo na mobilu. Černé pruhy nahoře a dole nebo po stranách vzniknou, když formát filmu neodpovídá obrazovce.</dd>
+    </dl>
+  </details>
+</section>
+
+<footer>Zjednodušená 3D scéna pro výuku filmové řeči. Postava je „vystřižená z papíru“, proto při ostrém nadhledu působí plochá.</footer>
+
+<dialog id="lb"><img alt=""><p></p></dialog>
+
+<script>
+(() => {
+'use strict';
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const num=(v,d=1)=>(Math.round(v*10**d)/10**d).toString().replace('.',',');
+const D2R=Math.PI/180, VFOV=40*D2R, MINH=0.12, NEAR=0.05;
+
+/* ================= Data ================= */
+const PLANS=[
+  {k:'VC',name:'Velký celek',c:1.55,h:16,desc:'Krajina nebo prostředí, postava je v něm malá. Ukazuje, kde se děj odehrává, často na začátku scény (orientační záběr).'},
+  {k:'C',name:'Celek',c:1.2,h:4.6,desc:'Celá postava i s okolím. Vidíme, kde postava je a co dělá.'},
+  {k:'PC',name:'Polocelek',c:0.88,h:1.95,desc:'Celá postava od hlavy k patě, vyplní skoro celou výšku obrazu. Vidíme pohyb a gesta celého těla.'},
+  {k:'AP',name:'Americký plán',c:1.1,h:1.4,desc:'Postava zhruba od kolen nahoru. Vznikl ve westernech, aby byl vidět i revolver u pasu.'},
+  {k:'PD',name:'Polodetail',c:1.36,h:0.86,desc:'Postava od pasu nahoru. Typický pro rozhovory: vidíme výraz tváře i gesta rukou.'},
+  {k:'D',name:'Detail',c:1.55,h:0.40,desc:'Obličej. Divák je postavě blízko a čte její emoce.'},
+  {k:'VD',name:'Velký detail',c:1.548,h:0.11,desc:'Jen část obličeje, třeba oči, nebo důležitý předmět. Silná emoce, napětí, zdůraznění.'}
+];
+const RAKURS=[
+  {k:'zabi',short:'Žabí',name:'Žabí perspektiva',a:-55,desc:'Kamera těsně u země se dívá prudce vzhůru. Postava působí obrovsky, mocně až hrozivě.'},
+  {k:'pod',short:'Podhled',name:'Podhled',a:-25,desc:'Kamera je níž než oči postavy a dívá se nahoru. Postava působí silně, sebevědomě a důležitě.'},
+  {k:'primy',short:'Přímý',name:'Přímý pohled',a:0,desc:'Kamera je ve výšce očí. Neutrální, přirozený pohled: jsme si s postavou rovni.'},
+  {k:'nad',short:'Nadhled',name:'Nadhled',a:25,desc:'Kamera je výš a dívá se dolů. Postava působí menší, slabší nebo osamělá.'},
+  {k:'ptaci',short:'Ptačí',name:'Ptačí perspektiva',a:60,desc:'Kamera je vysoko nad scénou. Dává přehled o prostoru, postava v něm působí ztraceně a bezmocně.'}
+];
+const FORMATS=[
+  {k:'43',name:'4:3',r:4/3,full:'4:3 (1,33:1)',desc:'Formát němého filmu a klasické televize.'},
+  {k:'137',name:'1,37:1',r:1.375,full:'1,37:1, akademický formát',desc:'Standard zvukového filmu od roku 1932 do 50. let.'},
+  {k:'169',name:'16:9',r:16/9,full:'16:9 (1,78:1)',desc:'HD televize, YouTube, počítačové monitory.'},
+  {k:'185',name:'1,85:1',r:1.85,full:'1,85:1, širokoúhlý formát',desc:'Jeden ze dvou nejběžnějších formátů dnešních kin.'},
+  {k:'239',name:'2,39:1',r:2.39,full:'2,39:1, CinemaScope',desc:'Velmi široký kinematografický obraz, oblíbený u velkolepých a akčních filmů.'},
+  {k:'11',name:'1:1',r:1,full:'1:1, čtverec',desc:'Čtvercový obraz, známý z Instagramu.'},
+  {k:'916',name:'9:16',r:9/16,full:'9:16, na výšku',desc:'Vertikální video pro mobil: TikTok, Reels, Shorts.'}
+];
+const st={plan:'PC',ang:0,roll:0,fmt:'169'};
+const P_=k=>PLANS.find(p=>p.k===k), F_=k=>FORMATS.find(f=>f.k===k);
+const rakOf=a=>a<=-40?RAKURS[0]:a<=-8?RAKURS[1]:a<8?RAKURS[2]:a<40?RAKURS[3]:RAKURS[4];
+
+/* ================= Geometrie scény ================= */
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const PAL=['#e8d3a9','#d9a07a','#c9d6c3','#e6c2b5','#f0e4c8','#b9c9d9','#e3b98f','#d7c4e0','#f2d0a4'];
+const POLYS=[];   // statické polygony {pts,fill,bias}
+function quad(pts,fill,bias=0){POLYS.push({pts,fill,bias});}
+(function build(){
+  const r=rng(9);
+  // zadní řada domů (průčelí v rovině z = 14)
+  let x=-70;
+  while(x<70){
+    const w=7+r()*3.5,fl=3+(r()*3|0),h=fl*3.2+0.8,col=PAL[r()*PAL.length|0],x0=x,x1=x+w,Z=26;
+    quad([[x0,h,Z],[x1,h,Z],[x1,h+3.6,Z+4],[x0,h+3.6,Z+4]],'#a5442e',0);
+    quad([[x0,0,Z],[x1,0,Z],[x1,h,Z],[x0,h,Z]],col,0);
+    quad([[x0,h-.35,Z-.02],[x1,h-.35,Z-.02],[x1,h,Z-.02],[x0,h,Z-.02]],'rgba(0,0,0,.12)',-.02);
+    const n=Math.max(2,Math.floor(w/2.4));
+    for(let f=1;f<fl;f++)for(let i=0;i<n;i++){const cx=x0+(i+.5)*w/n,y=f*3.2+.8;quad([[cx-.55,y,Z-.03],[cx+.55,y,Z-.03],[cx+.55,y+1.6,Z-.03],[cx-.55,y+1.6,Z-.03]],'#5d7f9c',-.03);}
+    const dc=(x0+x1)/2;quad([[dc-.7,0,Z-.03],[dc+.7,0,Z-.03],[dc+.7,2.5,Z-.03],[dc-.7,2.5,Z-.03]],'#6b4428',-.03);
+    if(w>8.5)for(const s of [-1,1]){const cx=dc+s*2.6;quad([[cx-.9,.8,Z-.03],[cx+.9,.8,Z-.03],[cx+.9,2.4,Z-.03],[cx-.9,2.4,Z-.03]],'#4f6e88',-.03);}
+    x=x1;
+  }
+  // boční řady domů (průčelí v rovinách x = ±20)
+  for(const side of [-1,1]){
+    let z=-70;const X=24*side;
+    while(z<26){
+      const w=Math.min(26-z,7+r()*3.5),fl=3+(r()*2|0),h=fl*3.2+0.8,col=PAL[r()*PAL.length|0],z0=z,z1=z+w;
+      quad([[X,h,z0],[X,h,z1],[X+4*side,h+3.6,z1],[X+4*side,h+3.6,z0]],'#9c3f2a',0);
+      quad([[X,0,z0],[X,0,z1],[X,h,z1],[X,h,z0]],col,0);
+      const n=Math.max(2,Math.floor(w/2.4)),E=X-.03*side;
+      for(let f=1;f<fl;f++)for(let i=0;i<n;i++){const cz=z0+(i+.5)*w/n,y=f*3.2+.8;quad([[E,y,cz-.55],[E,y,cz+.55],[E,y+1.6,cz+.55],[E,y+1.6,cz-.55]],'#5d7f9c',-.03);}
+      const dc=(z0+z1)/2;quad([[E,0,dc-.7],[E,0,dc+.7],[E,2.5,dc+.7],[E,2.5,dc-.7]],'#6b4428',-.03);
+      z=z1;
+    }
+  }
+})();
+const TREES=[[-12,15],[12,15],[-19,1],[19,1],[-19,-14],[19,-14],[-19,-30],[19,-30]];
+const LAMPS=[[-7,5],[7,5],[-7,-10],[7,-10],[-7,-25],[7,-25]];
+const CLOUDS=(()=>{const r=rng(3),a=[];for(let i=0;i<14;i++)a.push([(r()-.5)*900,90+r()*120,250+r()*450,18+r()*26]);return a;})();
+
+/* ================= Kamera ================= */
+function camera(W,H){
+  const P=P_(st.plan),e=st.ang*D2R,d=(P.h/2)/Math.tan(VFOV/2),T=[0,P.c,0];
+  let C=[0,T[1]+d*Math.sin(e),-d*Math.cos(e)],f,onGround=false;
+  if(C[1]>=MINH){f=[0,T[1]-C[1],T[2]-C[2]];}
+  else{
+    // kamera nemůže pod zem: položíme ji na zem a odsuneme tak, aby se plán vešel do záběru
+    onGround=true;const yb=Math.max(P.c-P.h/2,-0.3),yt=P.c+P.h/2;
+    const ext=hd=>Math.atan((yt-MINH)/hd)-Math.atan((yb-MINH)/hd);
+    let lo=.02,hi=400;for(let i=0;i<60;i++){const m=(lo+hi)/2;if(ext(m)>VFOV*.97)lo=m;else hi=m;}
+    const hd=hi,ph=(Math.atan((yt-MINH)/hd)+Math.atan((yb-MINH)/hd))/2;
+    C=[0,MINH,-hd];f=[0,Math.sin(ph),Math.cos(ph)];
+  }
+  const n=Math.hypot(f[1],f[2]);f=[0,f[1]/n,f[2]/n];
+  const u=[0,f[2],-f[1]],F=(H/2)/Math.tan(VFOV/2);
+  const depth=p=>(p[1]-C[1])*f[1]+(p[2]-C[2])*f[2];
+  const proj=p=>{const dy=p[1]-C[1],dz=p[2]-C[2],z=dy*f[1]+dz*f[2],y=dy*u[1]+dz*u[2];return[W/2+(p[0]-C[0])/z*F,H/2-y/z*F,z];};
+  return{C,f,u,F,W,H,depth,proj,onGround,tilt:Math.asin(-f[1])/D2R};
+}
+
+/* ================= Kreslení ================= */
+function clipPoly(cam,pts){
+  const out=[];
+  for(let i=0;i<pts.length;i++){
+    const a=pts[i],b=pts[(i+1)%pts.length],da=cam.depth(a),db=cam.depth(b);
+    if(da>=NEAR)out.push(a);
+    if((da>=NEAR)!==(db>=NEAR)){const t=(NEAR-da)/(db-da);out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]);}
+  }
+  return out;
+}
+function fillPoly(g,cam,pts,fill){
+  const c=clipPoly(cam,pts);if(c.length<3)return;
+  g.beginPath();c.forEach((p,i)=>{const q=cam.proj(p);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});g.closePath();g.fillStyle=fill;g.fill();
+}
+function seg(g,cam,a,b){
+  let da=cam.depth(a),db=cam.depth(b);if(da<NEAR&&db<NEAR)return;
+  if(da<NEAR){const t=(NEAR-da)/(db-da);a=[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
+  else if(db<NEAR){const t=(NEAR-db)/(da-db);b=[b[0]+(a[0]-b[0])*t,b[1]+(a[1]-b[1])*t,b[2]+(a[2]-b[2])*t];}
+  const p=cam.proj(a),q=cam.proj(b);g.moveTo(p[0],p[1]);g.lineTo(q[0],q[1]);
+}
+function circle(g,x,y,r){g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();}
+function ellipse(g,x,y,rx,ry,rot=0){g.beginPath();g.ellipse(x,y,rx,ry,rot,0,Math.PI*2);g.fill();}
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();g.fill();}
+
+/* postava (stejná dívka jako v Kompozici), kreslená v jednotkách: hlava 795, chodidla 1282 */
+const GX=1450,GFT=1282,GU=1.7/(1282-795);
+function drawGirl(g){
+  const X=GX;
+  g.fillStyle='#3b2416';g.beginPath();g.moveTo(X-33,835);g.bezierCurveTo(X-40,780,X+40,780,X+33,835);g.lineTo(X+38,906);g.quadraticCurveTo(X,916,X-38,906);g.closePath();g.fill();
+  g.fillStyle='#3b5b8c';rr(g,X-31,1030,27,236,8);rr(g,X+4,1030,27,236,8);
+  g.fillStyle='rgba(0,0,0,.12)';g.fillRect(X-4,1040,3,220);
+  g.fillStyle='#f4f4f4';rr(g,X-37,1258,37,24,9);rr(g,X+1,1258,37,24,9);
+  g.fillStyle='#cfcfcf';g.fillRect(X-35,1277,33,4);g.fillRect(X+3,1277,33,4);
+  g.strokeStyle='#d8433b';g.lineWidth=20;g.lineCap='round';g.beginPath();g.moveTo(X-38,896);g.lineTo(X-50,1032);g.moveTo(X+38,896);g.lineTo(X+50,1032);g.stroke();
+  g.fillStyle='#f0c39f';circle(g,X-51,1046,10);circle(g,X+51,1046,10);
+  g.fillStyle='#d8433b';g.beginPath();g.moveTo(X-38,889);g.quadraticCurveTo(X,872,X+38,889);g.lineTo(X+36,1000);g.lineTo(X+39,1048);g.lineTo(X-39,1048);g.lineTo(X-36,1000);g.closePath();g.fill();
+  g.strokeStyle='rgba(0,0,0,.18)';g.lineWidth=2;g.strokeRect(X-24,996,48,30);
+  g.beginPath();g.moveTo(X-8,890);g.lineTo(X-6,930);g.moveTo(X+8,890);g.lineTo(X+6,930);g.stroke();
+  g.fillStyle='#b8352e';ellipse(g,X,885,24,8);
+  g.fillStyle='#e9b892';g.fillRect(X-9,860,18,24);
+  g.fillStyle='#f0c39f';ellipse(g,X-29,840,5,8);ellipse(g,X+29,840,5,8);
+  g.fillStyle='#f3c9a5';ellipse(g,X,836,28,35);
+  g.fillStyle='#3b2416';g.beginPath();g.moveTo(X-30,832);g.bezierCurveTo(X-33,788,X+33,788,X+30,832);g.quadraticCurveTo(X+18,812,X+2,817);g.quadraticCurveTo(X-14,810,X-30,832);g.closePath();g.fill();
+  for(const sd of [-11,11]){
+    g.fillStyle='#fff';ellipse(g,X+sd,838,5.6,3.9);
+    g.fillStyle='#5b3a1f';circle(g,X+sd,838.3,3.1);
+    g.fillStyle='#111';circle(g,X+sd,838.3,1.5);
+    g.fillStyle='#fff';circle(g,X+sd-1,837.2,.8);
+    g.strokeStyle='#2a1a10';g.lineWidth=1.2;g.beginPath();g.ellipse(X+sd,838,5.8,4.1,0,Math.PI*1.05,Math.PI*1.95);g.stroke();
+    g.strokeStyle='#3b2416';g.lineWidth=1.8;g.beginPath();g.moveTo(X+sd-6,829);g.quadraticCurveTo(X+sd,825.5,X+sd+6,829);g.stroke();
+  }
+  g.strokeStyle='#c98f6c';g.lineWidth=1.4;g.beginPath();g.moveTo(X,841);g.quadraticCurveTo(X-3,848,X+1,850);g.stroke();
+  g.strokeStyle='#b8473f';g.lineWidth=2;g.beginPath();g.arc(X,852,7.5,Math.PI*.2,Math.PI*.8);g.stroke();
+  g.fillStyle='rgba(235,120,110,.25)';circle(g,X-17,849,5);circle(g,X+17,849,5);
+}
+/* postava jako „papírová“ plocha v rovině z = 0, vykreslená po vodorovných pruzích s perspektivou */
+const sprite=document.createElement('canvas');
+function drawCharacter(g,cam){
+  const BX0=-0.25,BX1=0.25,BY0=-0.01,BY1=1.72;
+  // jaká část postavy je vidět (paprsky rohy rozšířeného záběru → rovina z = 0)
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity,unb=false;
+  const {W,H,F,C,f,u}=cam;
+  for(const sx of [-.45,.5,1.45])for(const sy of [-.45,.5,1.45]){
+    const a=(sx*W-W/2)/F,b=(H/2-sy*H)/F,dir=[a,f[1]+u[1]*b,f[2]+u[2]*b];
+    if(dir[2]<=1e-6){unb=true;continue;}
+    const t=-C[2]/dir[2],px=C[0]+t*dir[0],py=C[1]+t*dir[1];
+    x0=Math.min(x0,px);x1=Math.max(x1,px);y0=Math.min(y0,py);y1=Math.max(y1,py);
+  }
+  if(unb){x0=BX0;x1=BX1;y1=BY1;y0=Math.min(y0,BY0);}
+  x0=Math.max(x0,BX0);x1=Math.min(x1,BX1);y0=Math.max(y0,BY0);y1=Math.min(y1,BY1);
+  if(x1<=x0||y1<=y0)return;
+  let R=0;for(const y of [y0,y1])R=Math.max(R,F/Math.max(NEAR,cam.depth([0,y,0])));
+  R=Math.min(R*1.3,2600/(x1-x0),2600/(y1-y0));
+  const sw=Math.max(2,Math.ceil((x1-x0)*R)),sh=Math.max(2,Math.ceil((y1-y0)*R));
+  sprite.width=sw;sprite.height=sh;
+  const s=sprite.getContext('2d');s.clearRect(0,0,sw,sh);
+  const k=GU*R;s.setTransform(k,0,0,k,(-GX*GU-x0)*R,(y1-GFT*GU)*R);drawGirl(s);s.setTransform(1,0,0,1,0,0);
+  const N=Math.min(sh,420);
+  for(let i=0;i<N;i++){
+    const ra=Math.floor(i*sh/N),rb=Math.floor((i+1)*sh/N);if(rb<=ra)continue;
+    const ya=y1-ra/R,yb=y1-rb/R,ym=(ya+yb)/2;
+    if(cam.depth([0,ym,0])<NEAR)continue;
+    const pa=cam.proj([x0,ya,0]),pb=cam.proj([x0,yb,0]),pl=cam.proj([x0,ym,0]),pr=cam.proj([x1,ym,0]);
+    g.drawImage(sprite,0,ra,sw,rb-ra,pl[0],pa[1],pr[0]-pl[0],pb[1]-pa[1]+.6);
+  }
+}
+
+function render(g,W,H){
+  const cam=camera(W,H),{F,f}=cam;
+  g.save();g.translate(W/2,H/2);g.rotate(-st.roll*D2R);g.translate(-W/2,-H/2);
+  const M=Math.max(W,H);
+  // obloha a země
+  const yh=H/2+F*f[1]/f[2];
+  let gr=g.createLinearGradient(0,yh-1.6*H,0,yh);gr.addColorStop(0,'#2f63a6');gr.addColorStop(.7,'#86b5dc');gr.addColorStop(1,'#d9e9f3');
+  g.fillStyle=gr;g.fillRect(-M,-2*M,3*M,5*M);
+  // mraky
+  g.fillStyle='rgba(255,255,255,.9)';
+  for(const [x,y,z,r] of CLOUDS){const p=[x,y,z];if(cam.depth(p)<NEAR)continue;const q=cam.proj(p),s=F/q[2];ellipse(g,q[0],q[1],r*1.8*s,r*.55*s);ellipse(g,q[0]+r*.6*s,q[1]-r*.25*s,r*s,r*.5*s);}
+  gr=g.createLinearGradient(0,yh,0,yh+H);gr.addColorStop(0,'#a99f8e');gr.addColorStop(1,'#c4b8a2');
+  g.fillStyle=gr;g.fillRect(-M,yh,3*M,4*M);
+  // dlažba
+  g.strokeStyle='rgba(95,84,68,.35)';g.lineWidth=1;g.beginPath();
+  for(let x=-24;x<=24;x+=1)seg(g,cam,[x,0,-80],[x,0,26]);
+  for(let z=-80;z<=26;z+=1)seg(g,cam,[-24,0,z],[24,0,z]);
+  g.stroke();
+  g.strokeStyle='rgba(120,80,50,.35)';g.lineWidth=2;g.beginPath();
+  for(let i=0;i<64;i++){const a1=i/64*Math.PI*2,a2=(i+1)/64*Math.PI*2;seg(g,cam,[Math.cos(a1)*6,0,11+Math.sin(a1)*6],[Math.cos(a2)*6,0,11+Math.sin(a2)*6]);}
+  g.stroke();
+  // stín postavy
+  const sh=[];for(let i=0;i<24;i++){const a=i/24*Math.PI*2;sh.push([.12+Math.cos(a)*.38,0,.08+Math.sin(a)*.22]);}
+  fillPoly(g,cam,sh,'rgba(40,30,20,.28)');
+  // ostatní objekty seřazené podle hloubky
+  const items=[];
+  for(const p of POLYS){let d=0;for(const v of p.pts)d+=cam.depth(v);items.push({d:d/p.pts.length+p.bias,fn:()=>fillPoly(g,cam,p.pts,p.fill)});}
+  for(const [x,z] of TREES){items.push({d:cam.depth([x,2,z]),fn:()=>{
+    fillPoly(g,cam,[[x-.2,0,z],[x+.2,0,z],[x+.15,2.8,z],[x-.15,2.8,z]],'#5d4128');
+    const c=[x,4.4,z];if(cam.depth(c)<NEAR)return;const q=cam.proj(c),s=F/q[2];
+    g.fillStyle='#2f5a2a';circle(g,q[0],q[1],2.3*s);g.fillStyle='#467d36';circle(g,q[0]-.5*s,q[1]-.4*s,1.7*s);g.fillStyle='#5f9a45';circle(g,q[0]-.8*s,q[1]-.9*s,.9*s);}});}
+  for(const [x,z] of LAMPS){items.push({d:cam.depth([x,2,z]),fn:()=>{
+    fillPoly(g,cam,[[x-.07,0,z],[x+.07,0,z],[x+.05,4.2,z],[x-.05,4.2,z]],'#2f3b36');
+    const c=[x,4.35,z];if(cam.depth(c)<NEAR)return;const q=cam.proj(c),s=F/q[2];
+    g.fillStyle='#2f3b36';rr(g,q[0]-.22*s,q[1]-.3*s,.44*s,.55*s,.08*s);g.fillStyle='#f6e7b0';g.fillRect(q[0]-.15*s,q[1]-.2*s,.3*s,.35*s);}});}
+  items.push({d:cam.depth([0,.9,0]),fn:()=>drawCharacter(g,cam)});
+  items.sort((a,b)=>b.d-a.d);for(const it of items)it.fn();
+  g.restore();
+  return cam;
+}
+
+/* ================= Boční pohled ================= */
+function drawSide(cam){
+  const c=$('side'),dpr=Math.min(2,window.devicePixelRatio||1),W=c.clientWidth,H=c.clientHeight;
+  if(!W)return;c.width=W*dpr;c.height=H*dpr;const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
+  const C=cam.C,zMin=Math.min(C[2],-0.4)-0.35,zMax=0.7,yMin=-0.18,yMax=Math.max(1.95,C[1])+0.3;
+  const s=Math.min((W-16)/(zMax-zMin),(H-12)/(yMax-yMin)),ox=(W-(zMax-zMin)*s)/2,oy=(H-(yMax-yMin)*s)/2;
+  const X=z=>ox+(z-zMin)*s,Y=y=>H-oy-(y-yMin)*s;
+  g.fillStyle='#16202b';g.fillRect(0,0,W,Y(0));g.fillStyle='#2a2620';g.fillRect(0,Y(0),W,H);
+  g.strokeStyle='#6b6253';g.lineWidth=1;g.beginPath();g.moveTo(0,Y(0));g.lineTo(W,Y(0));g.stroke();
+  // zorné pole
+  const ph=Math.asin(cam.f[1]),L=Math.hypot(C[2],C[1]-1)*1.25+0.5;
+  g.fillStyle='rgba(245,184,61,.16)';g.strokeStyle='rgba(245,184,61,.8)';g.lineWidth=1.2;g.beginPath();g.moveTo(X(C[2]),Y(C[1]));
+  for(const a of [ph+VFOV/2,ph-VFOV/2])g.lineTo(X(C[2]+Math.cos(a)*L),Y(C[1]+Math.sin(a)*L));
+  g.closePath();g.fill();g.stroke();
+  // postava z boku
+  g.fillStyle='#3b5b8c';g.fillRect(X(-.06),Y(.98),Math.max(2,.12*s),.98*s);
+  g.fillStyle='#d8433b';g.fillRect(X(-.1),Y(1.42),Math.max(2,.2*s),.46*s);
+  g.fillStyle='#f3c9a5';circle(g,X(0),Y(1.56),Math.max(2,.12*s));
+  g.fillStyle='#3b2416';g.beginPath();g.arc(X(0),Y(1.56),Math.max(2,.125*s),Math.PI*.95,Math.PI*2.05);g.fill();
+  // kamera
+  g.save();g.translate(X(C[2]),Y(C[1]));g.rotate(-ph);g.fillStyle='#eceef1';rr(g,-16,-7,16,14,3);g.fillStyle='#9ba2ad';g.fillRect(0,-4,6,8);g.fillStyle='#f5b83d';circle(g,-11,-9,3);g.restore();
+}
+
+/* ================= UI ================= */
+const stage=$('stage'),pic=$('pic'),pg=pic.getContext('2d');
+let cssW=0,cssH=0,dpr=1;
+function layout(){
+  const r=F_(st.fmt).r,SW=stage.clientWidth,SH=stage.clientHeight;
+  if(SW/SH>r){cssH=SH;cssW=Math.round(SH*r);}else{cssW=SW;cssH=Math.round(SW/r);}
+  dpr=Math.min(2,window.devicePixelRatio||1);
+  pic.style.width=cssW+'px';pic.style.height=cssH+'px';pic.width=Math.round(cssW*dpr);pic.height=Math.round(cssH*dpr);
+  draw();
+}
+function draw(){
+  if(!cssW)return;
+  pg.setTransform(1,0,0,1,0,0);pg.clearRect(0,0,pic.width,pic.height);
+  const cam=render(pg,pic.width,pic.height);
+  drawSide(cam);updateInfo(cam);
+}
+function seg2(id,list,key,onClick){const el=$(id);el.innerHTML='';for(const it of list){const b=document.createElement('button');b.textContent=it.name;b.dataset.k=it[key];b.addEventListener('click',()=>onClick(it));el.appendChild(b);}}
+seg2('plans',PLANS,'k',p=>{st.plan=p.k;sync();});
+seg2('rakurs',RAKURS.map(r=>({...r,name:r.short})),'k',r=>{st.ang=r.a;sync();});
+document.querySelectorAll('#rakurs button').forEach((b,i)=>b.title=RAKURS[i].name);
+seg2('fmts',FORMATS,'k',f=>{st.fmt=f.k;sync(true);});
+document.querySelectorAll('[data-roll]').forEach(b=>b.addEventListener('click',()=>{st.roll=+b.dataset.roll===0?0:(st.roll||15);sync();}));
+$('ang').addEventListener('input',e=>{st.ang=+e.target.value;sync();});
+$('rollR').addEventListener('input',e=>{st.roll=+e.target.value;sync();});
+
+function sync(re){
+  const rk=rakOf(st.ang);
+  document.querySelectorAll('#plans button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===st.plan));
+  document.querySelectorAll('#rakurs button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===rk.k));
+  document.querySelectorAll('#fmts button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.k===st.fmt));
+  document.querySelectorAll('[data-roll]').forEach(b=>b.setAttribute('aria-pressed',(+b.dataset.roll===0)===(st.roll===0)));
+  $('ang').value=st.ang;$('rollR').value=st.roll;
+  $('oAng').textContent=(st.ang>0?'+':st.ang<0?'−':'')+Math.abs(st.ang)+'°';
+  $('oRoll').textContent=(st.roll>0?'+':st.roll<0?'−':'')+Math.abs(st.roll)+'°';
+  $('fmtLabel').textContent=F_(st.fmt).full;
+  if(re)layout();else draw();
+}
+function updateInfo(cam){
+  const P=P_(st.plan),rk=rakOf(st.ang),F=F_(st.fmt),lv=st.roll===0;
+  const note=cam.onGround&&st.ang<0?'<em>Kamera už leží na zemi. U širších záběrů to víc nejde, proto je podhled mírnější.</em>':'';
+  $('info').innerHTML=
+    `<div style="--c:var(--p)"><b>${P.name}</b><span>${P.desc}</span></div>`+
+    `<div style="--c:var(--r)"><b>${rk.name}</b><span>${rk.desc}</span>${note}</div>`+
+    `<div style="--c:var(--l)"><b>${lv?'Vyrovnaná rovina':'Nakloněná rovina (holandský úhel)'}</b><span>${lv?'Horizont je vodorovně, obraz působí klidně a stabilně.':'Šikmý obraz narušuje rovnováhu: napětí, nejistota, zmatek, něco není v pořádku.'}</span></div>`+
+    `<div style="--c:var(--f)"><b>${F.full}</b><span>${F.desc}</span></div>`;
+  const t=cam.tilt,dist=Math.hypot(cam.C[2],cam.C[1]-P.c);
+  $('camTxt').textContent=`Výška kamery ${num(cam.C[1])} m · vzdálenost od postavy ${num(Math.abs(cam.C[2]))} m · kamera míří ${Math.abs(t)<1?'vodorovně':(t>0?'dolů':'nahoru')+' o '+Math.round(Math.abs(t))+'°'}`;
+}
+
+/* --- focení --- */
+const thumbs=$('thumbs'),lb=$('lb');
+$('snap').addEventListener('click',()=>{
+  const fl=$('flash');fl.classList.add('on');requestAnimationFrame(()=>requestAnimationFrame(()=>fl.classList.remove('on')));
+  const r=F_(st.fmt).r,H=720,W=Math.round(H*r),c=document.createElement('canvas');c.width=W;c.height=H;render(c.getContext('2d'),W,H);
+  const url=c.toDataURL('image/jpeg',.9),n=thumbs.children.length+1;
+  const title=`${P_(st.plan).name} · ${rakOf(st.ang).name}`,sub=`${st.roll===0?'vyrovnaná rovina':'nakloněná rovina ('+st.roll+'°)'} · ${F_(st.fmt).full}`;
+  const f=document.createElement('figure');
+  f.innerHTML=`<div class="ph"><img alt=""></div><figcaption><b></b><small></small><a download="zaber-${n}.jpg">Stáhnout</a></figcaption>`;
+  f.querySelector('img').src=url;f.querySelector('b').textContent=title;f.querySelector('small').textContent=sub;f.querySelector('a').href=url;
+  f.querySelector('.ph').addEventListener('click',()=>{lb.querySelector('img').src=url;lb.querySelector('p').textContent=title+' · '+sub;lb.showModal();});
+  thumbs.prepend(f);while(thumbs.children.length>21)thumbs.lastChild.remove();
+});
+$('clear').addEventListener('click',()=>{thumbs.innerHTML='';});
+lb.addEventListener('click',()=>lb.close());
+
+window.addEventListener('resize',layout);
+if(window.ResizeObserver)new ResizeObserver(layout).observe(stage);
+sync(true);
+window.kamera={st,sync};
+})();
+</script>
+</body>
+</html>

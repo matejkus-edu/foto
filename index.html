@@ -13,11 +13,11 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-.wrap{max-width:1040px;margin:0 auto;padding:clamp(28px,6vw,64px) 20px 40px}
+.wrap{max-width:1280px;margin:0 auto;padding:clamp(28px,6vw,64px) 20px 40px}
 .kicker{color:var(--accent);font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:.8rem;margin:0 0 8px}
 h1{font-size:clamp(1.9rem,5vw,2.8rem);line-height:1.1;margin:0 0 12px}
 .lead{color:var(--muted);font-size:1.08rem;max-width:640px;margin:0 0 34px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:20px}
 .card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;color:inherit;text-decoration:none;transition:transform .15s,border-color .15s,box-shadow .15s}
 .card:hover,.card:focus-visible{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 12px 34px rgba(0,0,0,.35);outline:none}
 .card svg{display:block;width:100%;height:auto;background:#0d0f12}
@@ -30,14 +30,14 @@ h1{font-size:clamp(1.9rem,5vw,2.8rem);line-height:1.1;margin:0 0 12px}
 .card:hover .go{text-decoration:underline}
 .tip{margin-top:34px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 20px;color:var(--muted);font-size:.92rem}
 .tip b{color:var(--text)}
-footer{max-width:1040px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:.8rem}
+footer{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:.8rem}
 </style>
 </head>
 <body>
 <div class="wrap">
   <p class="kicker">Filmová a audiovizuální výchova</p>
   <h1>Fotografie v praxi</h1>
-  <p class="lead">Dvě interaktivní cvičení, ve kterých si vyzkoušíš, jak funguje fotoaparát a jak poskládat dobrý snímek. Vyber si, čím začneš.</p>
+  <p class="lead">Tři interaktivní cvičení: jak funguje fotoaparát, jak poskládat dobrý snímek a jak kamera vypráví příběh. Vyber si, čím začneš.</p>
 
   <div class="grid">
     <a class="card" href="expozice.html">
@@ -108,9 +108,37 @@ footer{max-width:1040px;margin:0 auto;padding:0 20px 30px;color:var(--muted);fon
         <span class="go">Spustit cvičení →</span>
       </div>
     </a>
+    <a class="card" href="kamera.html">
+      <svg viewBox="0 0 480 220" aria-hidden="true">
+        <defs>
+          <linearGradient id="sky3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f63a6"/><stop offset="1" stop-color="#cfe3f1"/></linearGradient>
+        </defs>
+        <rect width="480" height="220" fill="#050608"/>
+        <rect y="34" width="480" height="152" fill="url(#sky3)"/>
+        <path d="M0 34h480v152H0z" fill="none"/>
+        <path d="M30 186L58 70h70l14 116zM150 186l10-96h64l8 96zM236 186l-2-116h76l-6 116zM318 186l-10-84h70l18 84zM392 186l-16-104h80l24 104z" fill="#e3b98f"/>
+        <path d="M150 186l10-96h64l8 96z" fill="#d7c4e0"/><path d="M318 186l-10-84h70l18 84z" fill="#c9d6c3"/>
+        <g fill="#5d7f9c"><rect x="72" y="92" width="12" height="20"/><rect x="100" y="92" width="12" height="20"/><rect x="72" y="128" width="12" height="20"/><rect x="100" y="128" width="12" height="20"/><rect x="250" y="92" width="12" height="20"/><rect x="282" y="92" width="12" height="20"/><rect x="250" y="128" width="12" height="20"/><rect x="282" y="128" width="12" height="20"/><rect x="410" y="104" width="12" height="20"/><rect x="438" y="104" width="12" height="20"/></g>
+        <rect y="176" width="480" height="10" fill="#a99f8e"/>
+        <g transform="translate(240 186)">
+          <rect x="-11" y="-58" width="9" height="58" rx="3" fill="#3b5b8c"/><rect x="2" y="-58" width="9" height="58" rx="3" fill="#3b5b8c"/>
+          <path d="M-16-108q16-6 32 0l-1 52h-30z" fill="#d8433b"/>
+          <ellipse cx="0" cy="-122" rx="12" ry="15" fill="#f3c9a5"/>
+          <path d="M-13-124q-1-20 13-20t13 20q-5-8-13-7t-13 7z" fill="#3b2416"/>
+        </g>
+        <g stroke="#f5b83d" stroke-width="2" fill="none" stroke-dasharray="5 4"><path d="M120 50h240v120H120z"/></g>
+        <g font-family="system-ui,Arial,sans-serif" font-weight="800" font-size="12" fill="#9ba2ad"><text x="470" y="26" text-anchor="end">2,39:1</text><text x="10" y="205">PODHLED · POLOCELEK</text></g>
+      </svg>
+      <div class="body">
+        <h2>Kamera a záběr</h2>
+        <p>Přepínej velikost záběru, úhel kamery, rovinu a formát obrazu a sleduj, jak se mění to, co divák vidí a jak postava působí.</p>
+        <div class="tags"><span>filmové plány</span><span>podhled / nadhled</span><span>holandský úhel</span><span>formát obrazu</span></div>
+        <span class="go">Spustit cvičení →</span>
+      </div>
+    </a>
   </div>
 
-  <div class="tip"><b>Tip:</b> V obou cvičeních můžeš snímky „vyfotit“ do galerie, porovnat je vedle sebe a stáhnout si je. Funguje to na počítači, tabletu i mobilu.</div>
+  <div class="tip"><b>Tip:</b> Ve všech cvičeních můžeš snímky „vyfotit“ do galerie, porovnat je vedle sebe a stáhnout si je. Funguje to na počítači, tabletu i mobilu.</div>
 </div>
 <footer>Zjednodušené simulace pro výuku fotografie.</footer>
 </body>
