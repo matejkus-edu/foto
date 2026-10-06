@@ -23,9 +23,10 @@ main{max-width:1440px;margin:0 auto;padding:10px 20px 20px;display:grid;grid-tem
 @media (max-width:960px){main{grid-template-columns:1fr}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
 
-.stage{position:relative;aspect-ratio:16/9;width:min(100%,max(420px,calc((100vh - 395px)*16/9)));margin:0 auto;background:#050608;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-#pic{display:block}
-.fmtlabel{position:absolute;right:10px;bottom:8px;font-size:.75rem;color:#6b727d;font-weight:700;letter-spacing:.04em;pointer-events:none}
+.stage{position:relative;aspect-ratio:16/9;width:min(100%,calc(max(300px,100vh - 395px)*16/9));margin:0 auto;background:transparent;display:flex;align-items:center;justify-content:center}
+#pic{display:block;border-radius:6px}
+.frame{position:relative;line-height:0}
+.fmtlabel{position:absolute;right:10px;bottom:8px;font-size:.75rem;color:rgba(255,255,255,.85);text-shadow:0 1px 3px rgba(0,0,0,.7);font-weight:700;letter-spacing:.04em;pointer-events:none}
 #flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
 #flash.on{opacity:.85;transition:none}
 
@@ -63,8 +64,8 @@ section{max-width:1440px;margin:0 auto;padding:0 20px 20px}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;align-items:start}
 .thumbs:empty::before{content:"Zatím žádné snímky. Tlačítkem „Vyfotit“ si ulož aktuální záběr a porovnej různé velikosti záběru, rakursy a formáty vedle sebe.";color:var(--muted);font-size:.9rem;grid-column:1/-1}
 figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
-figure .ph{background:#050608;display:flex;align-items:center;justify-content:center;aspect-ratio:16/9;cursor:zoom-in}
-figure img{display:block;max-width:100%;max-height:100%}
+figure .ph{background:#050608;display:flex;align-items:center;justify-content:center;cursor:zoom-in}
+figure img{display:block;max-width:100%;max-height:300px}
 figcaption{font-size:.8rem;padding:6px 8px;color:#c9cdd3}
 figcaption small{display:block;color:var(--muted)}
 figcaption a{color:var(--p);font-size:.78rem}
@@ -89,9 +90,9 @@ footer{max-width:1440px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
 <main>
   <div class="card">
     <div class="stage" id="stage">
-      <canvas id="pic" aria-label="Záběr kamery"></canvas>
+      <div class="frame"><canvas id="pic" aria-label="Záběr kamery"></canvas>
       <div id="flash"></div>
-      <div class="fmtlabel" id="fmtLabel"></div>
+      <div class="fmtlabel" id="fmtLabel"></div></div>
     </div>
 
     <div class="controls">
@@ -419,7 +420,8 @@ function drawSide(cam){
 const stage=$('stage'),pic=$('pic'),pg=pic.getContext('2d');
 let cssW=0,cssH=0,dpr=1;
 function layout(){
-  const r=F_(st.fmt).r,SW=stage.clientWidth,SH=stage.clientHeight;
+  const r=F_(st.fmt).r;
+  const SW=stage.clientWidth,SH=stage.clientHeight;
   if(SW/SH>r){cssH=SH;cssW=Math.round(SH*r);}else{cssW=SW;cssH=Math.round(SW/r);}
   dpr=Math.min(2,window.devicePixelRatio||1);
   pic.style.width=cssW+'px';pic.style.height=cssH+'px';pic.width=Math.round(cssW*dpr);pic.height=Math.round(cssH*dpr);
