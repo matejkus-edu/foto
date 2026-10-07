@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kompozice ve fotografii</title>
-<meta name="description" content="Interaktivní cvičení kompozice: pravidlo třetin, horizont, vodicí linie, symetrie a filmové plány.">
+<meta name="description" content="Interaktivní cvičení kompozice: pravidlo třetin, horizont, vodicí linie, symetrie a rámování (velikost záběru).">
 <style>
 :root{
   --bg:#121418; --panel:#1b1e24; --panel2:#262a32; --line:#30353f;
@@ -119,6 +119,19 @@ figcaption small{display:block;color:var(--muted)}
 figcaption .ok{color:var(--ok);font-weight:700}
 figcaption .no{color:var(--warn);font-weight:700}
 figcaption a{color:var(--info);font-size:.78rem}
+figcaption .del{background:none;border:0;padding:0;color:var(--muted);font:inherit;font-size:.78rem;text-decoration:underline;cursor:pointer}
+.share{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.share-txt{flex:1 1 300px}
+.share-txt b{display:block}
+.share-txt span{font-size:.85rem;color:var(--muted)}
+#who{flex:0 1 270px;min-width:0;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit}
+.sharebtn{padding:10px 16px;border:0;border-radius:9px;background:var(--accent);color:#111;font:inherit;font-weight:800;cursor:pointer}
+#shareDlg .sd{background:var(--panel);border:1px solid var(--line);padding:12px;border-radius:12px}
+#shareDlg img{max-height:70vh;margin:0 auto}
+.sd-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.sd-btns button,.sd-btns a{padding:9px 16px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-weight:700;text-decoration:none;cursor:pointer}
+.sd-btns .main{background:var(--accent);border-color:var(--accent);color:#111}
+#shareDlg p{color:var(--muted);font-size:.88rem}
 
 details.gl{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:12px}
 details.gl summary{cursor:pointer;font-weight:700}
@@ -158,7 +171,7 @@ footer{max-width:1320px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
       <span>Přiblížení <b id="hZoom">×1</b></span>
       <span>Náklon <b id="hRot">0°</b></span>
       <span>Formát <b id="hFmt">3:2</b></span>
-      <span class="planchip" id="planchip" hidden>Plán: <b id="planName">–</b></span>
+      <span class="planchip" id="planchip" hidden>Velikost záběru: <b id="planName">–</b></span>
     </div>
     <p class="howto">Obrazem posouváš tažením (myší nebo prstem). Přibližuješ kolečkem myši, dvěma prsty nebo posuvníkem. Na klávesnici fungují šipky a + / −.</p>
 
@@ -226,6 +239,11 @@ footer{max-width:1320px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
     <button id="clear">Smazat snímky</button>
     <button id="reset">Vynulovat splněná zadání</button>
   </div>
+  <div class="share">
+    <div class="share-txt"><b>📤 Odevzdat učiteli</b><span>Napiš své jméno a třídu a vytvoř z galerie jeden přehledový obrázek. Ten pak nahraj tam, kam určí učitel, třeba k úkolu v Google Classroom.</span></div>
+    <input id="who" placeholder="Jméno a příjmení, třída" maxlength="60" autocomplete="name">
+    <button id="shareBtn" class="sharebtn">Vytvořit přehled</button>
+  </div>
   <div class="thumbs" id="thumbs"></div>
 </section>
 
@@ -249,8 +267,8 @@ footer{max-width:1320px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
       <dd>Motiv přesně uprostřed, nejčastěji u odrazů a architektury. Působí klidně a slavnostně. Pravidla kompozice se dají porušit, ale vždy s nějakým záměrem.</dd>
       <dt>Formát</dt>
       <dd>Na šířku se hodí pro krajinu a děj do stran, na výšku pro vysoké věci a postavy.</dd>
-      <dt>Filmové plány</dt>
-      <dd>Velikost záběru ve filmu: velký celek, celek, polocelek, americký plán, polodetail, detail, velký detail. Čím blíž, tím víc emocí a tím méně prostředí.</dd>
+      <dt>Rámování: velikost záběru</dt>
+      <dd>Rámování určuje, co bude v záběru vidět a co zůstane mimo. Jednou z jeho složek je velikost záběru: velký celek, celek, polocelek, americký plán, polodetail, detail a velký detail. Čím blíž, tím víc emocí a tím méně prostředí.</dd>
       <dt>Holandský úhel</dt>
       <dd>Záměrně nakloněný záběr. Ve filmu vyjadřuje napětí, zmatek nebo nebezpečí.</dd>
     </dl>
@@ -261,6 +279,11 @@ footer{max-width:1320px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);f
 
 <div id="toast" role="status"></div>
 <dialog id="lb"><img alt=""><p></p></dialog>
+<dialog id="shareDlg"><div class="sd">
+  <img id="sdImg" alt="Přehled snímků">
+  <div class="sd-btns"><button id="sdShare" class="main" hidden>📤 Sdílet</button><a id="sdDown" class="main" download>⬇️ Stáhnout obrázek</a><button id="sdClose">Zavřít</button></div>
+  <p>Obrázek nahraj tam, kam určí učitel, třeba jako odevzdání úkolu v Google Classroom.</p>
+</div></dialog>
 
 <script>
 (() => {
@@ -460,7 +483,7 @@ function horizonInfo(){
   return{v,visible};
 }
 
-/* --- filmové plány --- */
+/* --- velikost záběru --- */
 const PLANS=[
   ['VC','Velký celek','krajina, postava je v ní malá'],
   ['C','Celek','celá postava i s okolím'],
@@ -551,7 +574,7 @@ const TASKS=[
      C(sizeH(TREE_BB)>=.3,'Strom je dost velký','Strom je moc malý. Přibliž.')];}},
   {id:'portrait',title:'Portrét u moře',main:['girl'],
    goal:'Udělej portrét dívky. Musí být vidět její obličej a v pozadí moře.',
-   why:'Kolik místa necháš nad hlavou? Bude dívka uprostřed, nebo na straně? Jak blízko půjdeš? Pod hledáčkem vidíš, jaký filmový plán zrovna máš.',
+   why:'Kolik místa necháš nad hlavou? Bude dívka uprostřed, nebo na straně? Jak blízko půjdeš? Pod hledáčkem vidíš, jakou velikost záběru zrovna máš.',
    needs(){const p=detectPlan(),[,vc]=uv(G.x,G.Ch),[,ve]=uv(G.x,G.Ey);return[
      C(!!p&&ve>=0&&vc<=1,'Obličej je v záběru','Najdi dívku na pláži a ať je vidět celý obličej.'),
      C(['AP','PD','D'].includes(p),'Dívka je hlavní motiv (zhruba od kolen nahoru až po obličej)',p==='VD'?'Jsi moc blízko. Trochu oddal.':'Přibliž se k dívce.'),
@@ -563,9 +586,9 @@ const TASKS=[
      C(bbIn(LH.bb),'Maják je v záběru','Maják chybí nebo je uříznutý.'),
      C(bbIn(BOAT.bb),'Loďka je v záběru','Loďka chybí nebo je uříznutá.'),
      C(bbIn(TREE_BB),'Strom je v záběru','Strom chybí nebo je uříznutý.')];}},
-  {id:'plans',title:'Filmové plány',main:['girl'],plans:true,
-   goal:'Ve filmu se velikost záběru nazývá plán. Vyfoť dívku ve všech sedmi plánech. Aktuální plán vidíš pod hledáčkem.',
-   why:'Čím blíž je kamera, tím víc vidíme, co postava prožívá, a tím méně vidíme prostředí. Režisér plány střídá. Celky ukazují, kde jsme, detaily přibližují emoce.'},
+  {id:'plans',title:'Rámování',main:['girl'],plans:true,
+   goal:'Rámování určuje, co bude v záběru vidět. Tady jde o velikost záběru: vyfoť dívku ve všech sedmi velikostech záběru. Tu aktuální vidíš pod hledáčkem.',
+   why:'Čím blíž je kamera, tím víc vidíme, co postava prožívá, a tím méně vidíme prostředí. Režisér velikosti záběru střídá: celky ukazují, kde jsme, detaily přibližují emoce.'},
   {id:'free',title:'Volné focení',free:true,
    goal:'Fotografuj, co chceš, a zkus z celé scény vytvořit co nejlepší snímek.',
    why:'Pravidla kompozice nejsou zákony, jsou to pomůcky. Dobrý fotograf je zná a ví, kdy je použít a kdy je záměrně porušit.'}
@@ -603,7 +626,7 @@ function analyze(){
   else R.push({label:'Vodicí linie',ok:null,val:'cesta není v záběru'});
   if(ws.length){const tot=ws.reduce((a,o)=>a+o.w,0),cu=ws.reduce((a,o)=>a+o.w*o.u,0)/tot,d=cu-.5;
     R.push({short:'vyvážení',label:'Vyvážení',ok:Math.abs(d)<.1,val:Math.abs(d)<.1?'těžiště je uprostřed':d<0?'snímek „váží“ víc vlevo':'snímek „váží“ víc vpravo'});}
-  const p=detectPlan();if(p)R.push({info:true,label:'Filmový plán',val:PLAN_NAME[p]});
+  const p=detectPlan();if(p)R.push({info:true,label:'Velikost záběru',val:PLAN_NAME[p]});
   if(Math.abs(st.th)>=10)R.push({short:'holandský úhel',label:'Holandský úhel',ok:true,val:'záběr je výrazně nakloněný'});
   return R;
 }
@@ -718,7 +741,7 @@ vf.addEventListener('wheel',e=>{
   const r=vf.getBoundingClientRect(),sx=e.clientX-r.left-cssW/2,sy=e.clientY-r.top-cssH/2;
   const t=rad(),c=Math.cos(t),s=Math.sin(t),k0=st.fh/cssH;
   const px=st.cx+(sx*c-sy*s)*k0,py=st.cy+(sx*s+sy*c)*k0;
-  st.fh*=Math.exp(d*.0005);clampState();
+  st.fh*=Math.exp(d*.0002);clampState();
   const k1=st.fh/cssH;st.cx=px-(sx*c-sy*s)*k1;st.cy=py-(sx*s+sy*c)*k1;
   update();
 },{passive:false});
@@ -758,35 +781,119 @@ let toastT=0;
 function toast(msg,good=false){const t=$('toast');t.textContent=msg;t.className='on'+(good?' good':'');clearTimeout(toastT);toastT=setTimeout(()=>t.className='',3200);}
 
 /* --- focení a galerie --- */
-const thumbs=$('thumbs'),lb=$('lb');
+const thumbs=$('thumbs'),lb=$('lb'),MAXP=40;
+let PHOTOS=[];
+/* snímky se ukládají do IndexedDB, aby nezmizely po zavření stránky */
+const dbp=new Promise(res=>{try{const r=indexedDB.open('fav-kompozice',1);r.onupgradeneeded=()=>r.result.createObjectStore('photos',{keyPath:'id'});r.onsuccess=()=>res(r.result);r.onerror=()=>res(null);}catch(e){res(null);}});
+const dbDo=async fn=>{const db=await dbp;if(!db)return;try{fn(db.transaction('photos','readwrite').objectStore('photos'));}catch(e){}};
+async function dbLoad(){const db=await dbp;if(!db)return[];return new Promise(res=>{try{const q=db.transaction('photos').objectStore('photos').getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>res([]);}catch(e){res([]);}});}
+
+function renderGallery(){
+  thumbs.innerHTML='';
+  for(const p of [...PHOTOS].reverse()){
+    const f=document.createElement('figure');
+    f.innerHTML=`<img alt=""><figcaption><b></b> <span></span><small></small><small class="rl"></small><a download>Stáhnout</a> · <button class="del">Smazat</button></figcaption>`;
+    const img=f.querySelector('img');img.src=p.url;
+    f.querySelector('b').textContent=p.title;
+    const v=f.querySelector('span');v.textContent=p.verdict;v.className=p.ok===true?'ok':p.ok===false?'no':'';
+    f.querySelector('small').textContent=p.info;f.querySelector('.rl').textContent=p.rules;
+    const a=f.querySelector('a');a.href=p.url;a.download=`kompozice-${p.id}.jpg`;
+    img.addEventListener('click',()=>{lb.querySelector('img').src=p.url;lb.querySelector('p').textContent=`${p.title} · ${p.info} · ${p.rules}`;lb.showModal();});
+    f.querySelector('.del').addEventListener('click',()=>{PHOTOS=PHOTOS.filter(x=>x.id!==p.id);dbDo(s=>s.delete(p.id));renderGallery();});
+    thumbs.appendChild(f);
+  }
+}
+
 $('snap').addEventListener('click',()=>{
   const fl=$('flash');fl.classList.add('on');requestAnimationFrame(()=>requestAnimationFrame(()=>fl.classList.remove('on')));
   const H=720,W=Math.round(H*ASPECT[st.fmt]),c=document.createElement('canvas');c.width=W;c.height=H;renderTo(c.getContext('2d'),W,H);
-  const url=c.toDataURL('image/jpeg',.9),plan=detectPlan(),rules=analyze().filter(r=>r.ok===true&&r.short).map(r=>r.short);
-  let verdict='';
+  const url=c.toDataURL('image/jpeg',.88),plan=detectPlan(),rules=analyze().filter(r=>r.ok===true&&r.short).map(r=>r.short);
+  let verdict='',ok=null;
   if(cur.plans){
-    if(plan){const isNew=!plansGot.has(plan);plansGot.add(plan);verdict=`<span class="ok">${PLAN_NAME[plan]}</span>`;
-      if(plansGot.size===PLANS.length&&!done.has('plans')){done.add('plans');toast('Zadání splněno! Máš všech sedm filmových plánů. 🎬',true);}
-      else toast(isNew?`${PLAN_NAME[plan]}: ve sbírce máš ${plansGot.size} ze 7 plánů.`:`${PLAN_NAME[plan]} už ve sbírce máš. Zkus jiný plán.`,isNew);}
-    else{verdict='<span class="no">dívka není v záběru</span>';toast('Dívka není v záběru, tenhle snímek se do sbírky nepočítá.');}
+    if(plan){const isNew=!plansGot.has(plan);plansGot.add(plan);verdict=PLAN_NAME[plan];ok=true;
+      if(plansGot.size===PLANS.length&&!done.has('plans')){done.add('plans');toast('Zadání splněno! Máš všech sedm velikostí záběru. 🎬',true);}
+      else toast(isNew?`${PLAN_NAME[plan]}: ve sbírce máš ${plansGot.size} ze 7 velikostí záběru.`:`${PLAN_NAME[plan]} už ve sbírce máš. Zkus jinou velikost záběru.`,isNew);}
+    else{verdict='dívka není v záběru';ok=false;toast('Dívka není v záběru, tenhle snímek se do sbírky nepočítá.');}
   }else if(cur.needs){
-    const ok=cur.needs().every(x=>x.ok);verdict=ok?'<span class="ok">✓ splněno</span>':'<span class="no">✗ chybí obsah</span>';
+    ok=cur.needs().every(x=>x.ok);verdict=ok?'✓ splněno':'✗ chybí obsah';
     if(ok){const first=!done.has(cur.id);done.add(cur.id);toast(first?'Zadání splněno! 🎉 Snímek najdeš v galerii.':'Další snímek k tomuto zadání je v galerii. Porovnej je.',true);}
     else toast('Snímek je v galerii, ale ještě v něm chybí, co zadání požaduje. Podívej se vpravo.');
   }
   save();renderTaskButtons();updateTNum();lastChecks='';requestDraw();
-  const n=thumbs.children.length+1,info=`${FMT_NAME[st.fmt]} · ×${num(FH_MAX/st.fh)}${st.th?` · náklon ${num(st.th)}°`:''}${plan?' · '+PLAN_NAME[plan]:''}`;
-  const rtxt=rules.length?'Pravidla: '+rules.join(', '):'Žádné z pravidel';
-  const f=document.createElement('figure');
-  f.innerHTML=`<img alt=""><figcaption><b>${cur.title}</b> ${verdict}<small>${info}</small><small class="rl">${rtxt}</small><a download="kompozice-${n}.jpg">Stáhnout</a></figcaption>`;
-  const img=f.querySelector('img');img.src=url;f.querySelector('a').href=url;
-  const title=cur.title;
-  img.addEventListener('click',()=>{lb.querySelector('img').src=url;lb.querySelector('p').textContent=`${title} · ${info} · ${rtxt}`;lb.showModal();});
-  thumbs.prepend(f);while(thumbs.children.length>20)thumbs.lastChild.remove();
+  const info=`${FMT_NAME[st.fmt]} · ×${num(FH_MAX/st.fh)}${st.th?` · náklon ${num(st.th)}°`:''}${plan&&!cur.plans?' · '+PLAN_NAME[plan]:''}`;
+  const p={id:Date.now(),t:Date.now(),task:cur.id,title:cur.title,verdict,ok,info,rules:rules.length?'Pravidla: '+rules.join(', '):'Žádné z pravidel',url,w:W,h:H};
+  PHOTOS.push(p);dbDo(s=>s.put(p));
+  while(PHOTOS.length>MAXP){const old=PHOTOS.shift();dbDo(s=>s.delete(old.id));}
+  renderGallery();
 });
-$('clear').addEventListener('click',()=>{thumbs.innerHTML='';});
+
+let clearArm=0;
+$('clear').addEventListener('click',e=>{
+  if(!PHOTOS.length)return;
+  if(Date.now()-clearArm>3000){clearArm=Date.now();e.target.textContent='Opravdu smazat všechny?';setTimeout(()=>e.target.textContent='Smazat snímky',3000);return;}
+  PHOTOS=[];dbDo(s=>s.clear());renderGallery();e.target.textContent='Smazat snímky';clearArm=0;
+});
 $('reset').addEventListener('click',()=>{done.clear();plansGot.clear();save();selectTask(cur);toast('Postup byl vynulován.');});
 lb.addEventListener('click',()=>lb.close());
+dbLoad().then(arr=>{PHOTOS=arr.sort((a,b)=>a.t-b.t);renderGallery();});
+
+/* --- přehled ke sdílení --- */
+const whoEl=$('who');
+try{whoEl.value=localStorage.getItem('fav-kompozice-who')||'';}catch(e){}
+whoEl.addEventListener('input',()=>{try{localStorage.setItem('fav-kompozice-who',whoEl.value);}catch(e){}});
+const loadImg=src=>new Promise(res=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>res(null);i.src=src;});
+function fitText(g,t,maxW){if(g.measureText(t).width<=maxW)return t;while(t.length>1&&g.measureText(t+'…').width>maxW)t=t.slice(0,-1);return t+'…';}
+async function buildSheet(who){
+  const W=1600,pad=44,tileH=230,gap=18,capH=50;
+  const groups=TASKS.map((t,i)=>({t,i,ph:PHOTOS.filter(p=>p.task===t.id)})).filter(g=>g.ph.length);
+  const items=[],heads=[];let y=pad+160;
+  for(const g of groups){
+    heads.push({g,y});y+=46;let x=pad;
+    for(const p of g.ph){const w=Math.round(tileH*p.w/p.h);if(x+w>W-pad&&x>pad){x=pad;y+=tileH+capH+gap;}items.push({p,x,y,w});x+=w+gap;}
+    y+=tileH+capH+gap+14;
+  }
+  const H=y+pad-14,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+  g.fillStyle='#121418';g.fillRect(0,0,W,H);
+  g.fillStyle='#f5b83d';g.fillRect(0,0,W,8);
+  g.textBaseline='alphabetic';g.fillStyle='#9ba2ad';g.font='700 20px system-ui,Arial,sans-serif';g.fillText('KOMPOZICE VE FOTOGRAFII · MOJE SNÍMKY',pad,pad+22);
+  g.fillStyle='#eceef1';g.font='800 44px system-ui,Arial,sans-serif';g.fillText(fitText(g,who,W-2*pad),pad,pad+76);
+  const scored=SCORED.length,dn=SCORED.filter(t=>done.has(t.id)).length,d=new Date();
+  g.fillStyle='#c9cdd3';g.font='500 22px system-ui,Arial,sans-serif';
+  g.fillText(`Splněná zadání: ${dn} z ${scored}  ·  Rámování: ${plansGot.size} ze 7 velikostí záběru  ·  Snímků: ${PHOTOS.length}  ·  ${d.toLocaleDateString('cs-CZ')} ${d.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'})}`,pad,pad+116);
+  const imgs=await Promise.all(items.map(it=>loadImg(it.p.url)));
+  for(const {g:gr,y:hy} of heads){
+    const t=gr.t,isDone=done.has(t.id);
+    g.fillStyle='#30353f';g.fillRect(pad,hy-6,W-2*pad,1);
+    g.font='800 26px system-ui,Arial,sans-serif';g.fillStyle='#eceef1';
+    const label=t.free?`★ ${t.title}`:`${gr.i+1}. ${t.title}`;g.fillText(label,pad,hy+28);
+    if(!t.free){const lw=g.measureText(label).width;g.font='700 20px system-ui,Arial,sans-serif';g.fillStyle=isDone?'#9ccc65':'#ff8a65';g.fillText(isDone?'✓ splněno':'zatím nesplněno',pad+lw+16,hy+27);}
+  }
+  items.forEach((it,k)=>{
+    const {p,x,y:iy,w}=it,im=imgs[k];
+    g.fillStyle='#000';g.fillRect(x,iy,w,tileH);if(im)g.drawImage(im,x,iy,w,tileH);
+    g.font='700 17px system-ui,Arial,sans-serif';g.fillStyle=p.ok===true?'#9ccc65':p.ok===false?'#ff8a65':'#c9cdd3';
+    g.fillText(fitText(g,p.verdict||p.title,Math.max(w,160)),x,iy+tileH+22);
+    g.font='400 14px system-ui,Arial,sans-serif';g.fillStyle='#8fc8e6';g.fillText(fitText(g,p.rules,Math.max(w,160)),x,iy+tileH+42);
+  });
+  return c;
+}
+const shareDlg=$('shareDlg');
+$('sdClose').addEventListener('click',()=>shareDlg.close());
+$('shareBtn').addEventListener('click',async()=>{
+  const who=whoEl.value.trim();
+  if(!PHOTOS.length){toast('Nejdřív vyfoť aspoň jeden snímek.');return;}
+  if(!who){toast('Napiš své jméno a třídu, ať učitel ví, čí snímky to jsou.');whoEl.focus();return;}
+  const c=await buildSheet(who),url=c.toDataURL('image/jpeg',.88);
+  const slug=who.normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase()||'snimky';
+  const fname=`kompozice-${slug}.jpg`;
+  $('sdImg').src=url;$('sdDown').href=url;$('sdDown').download=fname;
+  const btn=$('sdShare');btn.hidden=true;
+  c.toBlob(blob=>{
+    if(!blob)return;const file=new File([blob],fname,{type:'image/jpeg'});
+    try{if(navigator.canShare&&navigator.canShare({files:[file]})){btn.hidden=false;btn.onclick=()=>navigator.share({files:[file],title:'Kompozice – '+who}).catch(()=>{});}}catch(e){}
+  },'image/jpeg',.88);
+  shareDlg.showModal();
+});
 
 window.addEventListener('resize',layout);
 if(window.ResizeObserver)new ResizeObserver(layout).observe($('vfwrap'));
