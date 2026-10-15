@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fotografie v praxi</title>
-<meta name="description" content="Interaktivní cvičení k fotografii: expoziční trojúhelník a kompozice.">
+<meta name="description" content="Interaktivní cvičení k fotografii a filmu: expoziční trojúhelník, kompozice, kamera a záběr, pohyby kamery.">
 <style>
 :root{
   --bg:#121418; --panel:#1b1e24; --panel2:#262a32; --line:#30353f;
@@ -17,7 +17,9 @@ html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-u
 .kicker{color:var(--accent);font-weight:800;letter-spacing:.12em;text-transform:uppercase;font-size:.8rem;margin:0 0 8px}
 h1{font-size:clamp(1.9rem,5vw,2.8rem);line-height:1.1;margin:0 0 12px}
 .lead{color:var(--muted);font-size:1.08rem;max-width:640px;margin:0 0 34px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:20px}
+.grid{display:grid;grid-template-columns:1fr;gap:20px}
+@media (min-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1200px){.grid{grid-template-columns:repeat(4,1fr)}}
 .card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;color:inherit;text-decoration:none;transition:transform .15s,border-color .15s,box-shadow .15s}
 .card:hover,.card:focus-visible{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 12px 34px rgba(0,0,0,.35);outline:none}
 .card svg{display:block;width:100%;height:auto;background:#0d0f12}
@@ -37,7 +39,7 @@ footer{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--muted);fon
 <div class="wrap">
   <p class="kicker">Filmová a audiovizuální výchova</p>
   <h1>Fotografie v praxi</h1>
-  <p class="lead">Tři interaktivní cvičení: jak funguje fotoaparát, jak poskládat dobrý snímek a jak kamera vypráví příběh. Vyber si, čím začneš.</p>
+  <p class="lead">Čtyři interaktivní cvičení: jak funguje fotoaparát, jak poskládat dobrý snímek, jak kamera vypráví příběh a jak se při tom pohybuje. Vyber si, čím začneš.</p>
 
   <div class="grid">
     <a class="card" href="expozice.html">
@@ -136,9 +138,48 @@ footer{max-width:1280px;margin:0 auto;padding:0 20px 30px;color:var(--muted);fon
         <span class="go">Spustit cvičení →</span>
       </div>
     </a>
+    <a class="card" href="pohyby.html">
+      <svg viewBox="0 0 480 220" aria-hidden="true">
+        <defs>
+          <linearGradient id="sky4" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fa6c0"/><stop offset=".7" stop-color="#f6e3c6"/><stop offset="1" stop-color="#fbd3a8"/></linearGradient>
+          <marker id="ah4" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5 0 10z" fill="#f5b83d"/></marker>
+        </defs>
+        <rect width="480" height="220" fill="url(#sky4)"/>
+        <path d="M0 120q60-22 120-6t130-10 130 4 100-6V220H0z" fill="#a9c6a0"/>
+        <rect y="132" width="480" height="88" fill="#9cc283"/>
+        <path d="M262 132h60v-46l-30-20-30 20z" fill="#f2d0a4"/><path d="M262 86l30-20 30 20z" fill="#c4583f"/>
+        <path d="M322 132h52V92l-26-18-26 18z" fill="#cfe0c8"/><path d="M322 92l26-18 26 18z" fill="#a8473a"/>
+        <rect x="384" y="40" width="26" height="92" fill="#efe2c6"/><path d="M380 40l17-26 17 26z" fill="#3f8f86"/><circle cx="397" cy="56" r="7" fill="#fffaf0"/>
+        <g fill="#5f9452"><circle cx="440" cy="104" r="20"/><circle cx="236" cy="108" r="16"/></g>
+        <path d="M150 132l-60 88h28l52-88zM290 132l58 88h-28l-50-88z" fill="#dcc9a2" opacity=".0"/>
+        <g transform="translate(316 132)">
+          <rect x="-4" y="-46" width="8" height="46" fill="#e76f51"/><circle cy="-52" r="7" fill="#f0c3a0"/><path d="M-7-54q0-10 7-10t7 10q-3-5-7-5t-7 5z" fill="#3b2416"/>
+        </g>
+        <g stroke="#7d5038" stroke-width="5" stroke-linecap="round"><path d="M20 208L230 160M60 220L270 166"/></g>
+        <g stroke="#7d5038" stroke-width="3"><path d="M44 210l26-2M84 200l28-2M124 191l28-2M164 182l28-2M204 173l26-2"/></g>
+        <g transform="translate(130 176) rotate(-12)">
+          <rect x="-30" y="-6" width="64" height="12" rx="4" fill="#2b3a4a"/>
+          <rect x="-4" y="-44" width="8" height="40" fill="#2b3a4a"/>
+          <rect x="-24" y="-76" width="50" height="32" rx="5" fill="#1d2b45"/>
+          <path d="M26-70l18-8v28l-18-8z" fill="#1d2b45"/><circle cx="-8" cy="-86" r="10" fill="none" stroke="#1d2b45" stroke-width="5"/><circle cx="14" cy="-86" r="10" fill="none" stroke="#1d2b45" stroke-width="5"/>
+        </g>
+        <g stroke="#f5b83d" stroke-width="4" fill="none" stroke-linecap="round">
+          <path d="M60 60q70-34 150 0" marker-end="url(#ah4)"/>
+          <path d="M40 150q-24-50 8-92" marker-end="url(#ah4)" opacity=".85"/>
+          <path d="M150 210l70-16" marker-end="url(#ah4)"/>
+        </g>
+        <g font-family="system-ui,Arial,sans-serif" font-weight="800" font-size="12" fill="#1d2b45"><text x="135" y="38" text-anchor="middle">ŠVENK</text><text x="18" y="114" transform="rotate(-90 18 110)" text-anchor="middle">TILT</text></g>
+      </svg>
+      <div class="body">
+        <h2>Pohyby kamery</h2>
+        <p>Animované ukázky: co se v obraze děje, když kamera švenkuje, jede, stoupá na jeřábu, chvěje se v ruce nebo zoomuje.</p>
+        <div class="tags"><span>švenk</span><span>jízda</span><span>jeřáb</span><span>ruční kamera</span><span>steadicam</span><span>zoom</span></div>
+        <span class="go">Spustit ukázku →</span>
+      </div>
+    </a>
   </div>
 
-  <div class="tip"><b>Tip:</b> Ve všech cvičeních můžeš snímky „vyfotit“ do galerie, porovnat je vedle sebe a stáhnout si je. Funguje to na počítači, tabletu i mobilu.</div>
+  <div class="tip"><b>Tip:</b> V prvních třech cvičeních můžeš snímky „vyfotit“ do galerie, porovnat je vedle sebe a stáhnout si je. Funguje to na počítači, tabletu i mobilu.</div>
 </div>
 <footer>Zjednodušené simulace pro výuku fotografie.</footer>
 </body>

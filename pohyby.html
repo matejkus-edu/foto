@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pohyby kamery</title>
+<meta name="description" content="Animovaná ukázka pohybů kamery: švenk, vertikální švenk, jízda, jeřáb, ruční kamera, steadicam, zoom a jízda se zoomem.">
+<style>
+:root{
+  --bg:#121418; --panel:#1b1e24; --panel2:#262a32; --line:#30353f;
+  --text:#eceef1; --muted:#9ba2ad; --accent:#f5b83d; --coral:#e76f51; --teal:#5fb8ac;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+header{max-width:1440px;margin:0 auto;padding:12px 20px 0}
+.hrow{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;color:var(--muted);text-decoration:none;font-size:.88rem;padding:4px 10px 4px 8px;border:1px solid var(--line);border-radius:999px}
+.back:hover{color:var(--text);border-color:var(--muted)}
+h1{margin:0;font-size:clamp(1.25rem,2.2vw,1.6rem)}
+header p{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+.moves{max-width:1440px;margin:0 auto;padding:10px 20px 0;display:flex;flex-wrap:wrap;gap:6px}
+.moves button{display:flex;align-items:center;gap:7px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:999px;padding:5px 13px 5px 5px;font:inherit;font-size:.9rem;cursor:pointer}
+.moves button .n{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:#3a404b;font-size:.75rem;font-weight:800}
+.moves button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#111;font-weight:700}
+.moves button[aria-pressed="true"] .n{background:#111;color:var(--accent)}
+main{max-width:1440px;margin:0 auto;padding:10px 20px 20px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}
+@media (max-width:980px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stage{position:relative;aspect-ratio:16/9;width:min(100%,max(420px,calc((100vh - 290px)*16/9)));margin:0 auto;border-radius:8px;overflow:hidden;background:#000}
+#view{position:absolute;inset:0;width:100%;height:100%;display:block}
+.tag{position:absolute;left:12px;top:10px;font:700 .78rem system-ui,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.92);background:rgba(20,22,28,.45);padding:4px 9px;border-radius:6px;pointer-events:none}
+.ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-top:10px}
+.play{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-width:128px;padding:10px 16px;border:0;border-radius:10px;background:var(--accent);color:#111;font:800 1rem system-ui,Arial,sans-serif;cursor:pointer}
+#scrub{flex:1 1 220px;accent-color:var(--accent);height:24px;cursor:pointer}
+.seg{display:flex;gap:4px;background:var(--panel2);padding:4px;border-radius:9px}
+.seg button{border:0;background:transparent;color:var(--text);padding:6px 10px;border-radius:6px;font:inherit;font-size:.86rem;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#111;font-weight:700}
+.variant{display:none}
+.variant.on{display:flex}
+.lbl{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+
+aside h2{margin:0;font-size:1.4rem}
+.en{display:inline-block;margin-top:4px;font-size:.82rem;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:1px 10px}
+.sec{margin-top:14px}
+.sec b{display:block;font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-bottom:3px}
+.sec p{margin:0;color:#d6d9de;font-size:.94rem}
+#diag{display:block;width:100%;height:230px;border-radius:8px;background:#f3ead9;margin-top:6px}
+.dlab{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+.legend{display:flex;gap:12px;font-size:.78rem;color:var(--muted);margin-top:6px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.cmp{margin-top:12px;width:100%;padding:9px 12px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font:inherit;font-size:.9rem;cursor:pointer;text-align:left}
+.cmp:hover{border-color:var(--accent)}
+details.gl{max-width:1400px;margin:0 auto 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
+section{max-width:1440px;margin:0 auto;padding:0 20px 10px}
+details.gl summary{cursor:pointer;font-weight:700}
+details.gl dt{font-weight:700;margin-top:10px}
+details.gl dd{margin:2px 0 0;color:#d3d6db}
+footer{max-width:1440px;margin:0 auto;padding:4px 20px 30px;color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow"><a class="back" href="index.html">← Všechna cvičení</a><h1>Pohyby kamery</h1></div>
+  <p>Vyber pohyb a sleduj, jak se mění obraz. Schéma vpravo ukazuje, co přitom dělá samotná kamera.</p>
+</header>
+
+<nav class="moves" id="moves" aria-label="Pohyby kamery"></nav>
+
+<main>
+  <div class="card">
+    <div class="stage"><canvas id="view" aria-label="Záběr kamery"></canvas><div class="tag" id="tag"></div></div>
+    <div class="ctrl">
+      <button class="play" id="play">❚❚ Pauza</button>
+      <input type="range" id="scrub" min="0" max="1000" step="1" aria-label="Průběh záběru">
+      <div class="seg" id="speed"><button data-s="0.5">0,5×</button><button data-s="1">1×</button><button data-s="2">2×</button></div>
+    </div>
+    <div class="ctrl variant" id="variant">
+      <span class="lbl">Směr jízdy</span>
+      <div class="seg"><button data-v="side">Do strany (souběžná jízda)</button><button data-v="in">Dopředu (k postavě)</button></div>
+    </div>
+  </div>
+
+  <aside class="card">
+    <h2 id="mName"></h2>
+    <span class="en" id="mEn"></span>
+    <div class="sec"><b>Co dělá kamera</b><p id="mWhat"></p></div>
+    <div class="sec"><b>Jak to působí</b><p id="mEffect"></p></div>
+    <div class="sec"><b>Všimni si</b><p id="mNote"></p></div>
+    <div class="dlab"><span class="lbl" id="dTitle"></span></div>
+    <canvas id="diag" aria-label="Schéma pohybu kamery"></canvas>
+    <div class="legend"><span><i style="background:#e76f51"></i>postava</span><span><i style="background:#1d2b45"></i>kamera a její záběr</span><span><i style="background:#2a7c7a"></i>dráha kamery</span></div>
+    <button class="cmp" id="cmp" hidden></button>
+  </aside>
+</main>
+
+<section>
+  <details class="gl">
+    <summary>Slovníček pohybů kamery</summary>
+    <dl>
+      <dt>Švenk (panoráma)</dt><dd>Kamera se na místě otáčí do strany. Anglicky „pan“.</dd>
+      <dt>Vertikální švenk</dt><dd>Kamera se na místě naklání nahoru nebo dolů. Anglicky „tilt“.</dd>
+      <dt>Jízda</dt><dd>Kamera se pohybuje prostorem: dopředu, dozadu nebo souběžně s postavou. Často na vozíku po kolejích (dolly). Anglicky „tracking shot“ nebo „dolly shot“.</dd>
+      <dt>Jeřáb</dt><dd>Kamera na rameni jeřábu stoupá nebo klesá. Anglicky „crane shot“.</dd>
+      <dt>Ruční kamera</dt><dd>Kamera v rukou nebo na rameni kameramana, obraz se chvěje. Anglicky „handheld“.</dd>
+      <dt>Steadicam</dt><dd>Stabilizační držák s vestou a pružným ramenem. Kameraman chodí, ale obraz plyne hladce.</dd>
+      <dt>Zoom (transfokace)</dt><dd>Změna ohniskové vzdálenosti objektivu. Kamera stojí, obraz se zvětšuje nebo zmenšuje.</dd>
+      <dt>Paralaxa</dt><dd>Když se kamera pohybuje, bližší předměty se v obraze posouvají rychleji než vzdálené. Podle toho poznáš jízdu od švenku a od zoomu.</dd>
+    </dl>
+  </details>
+</section>
+<footer>Zjednodušená 3D scéna pro výuku filmové řeči. Stromy a postava jsou „vystřižené z papíru“.</footer>
+
+<script>
+(() => {
+'use strict';
+const $=id=>document.getElementById(id);
+const D2R=Math.PI/180, NEAR=.08;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const L3=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
+const ease=t=>{t=clamp(t,0,1);return t*t*t*(t*(t*6-15)+10);};
+function rng(seed){return()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;r=Math.round(clamp(r*f,0,255));g=Math.round(clamp(g*f,0,255));b=Math.round(clamp(b*f,0,255));return`rgb(${r},${g},${b})`;}
+
+/* ================= SVĚT ================= */
+const PAL=['#f2d0a4','#e9b8a0','#cfe0c8','#f6e7c8','#d9c6e3','#bfd8e0','#f0c38e','#e7d3b0'];
+const HOUSES=[];
+(()=>{const r=rng(12);let x=-40;while(x<40){const w=5+r()*2.6;if(x+w>7.6&&x<12.4){x=12.4;continue;}
+  HOUSES.push({x0:x,x1:x+w,z0:18,z1:25,h:6.2+r()*3.6,rh:2.6+r()*1,col:PAL[r()*PAL.length|0],roof:r()<.5?'#c4583f':'#a8473a',seed:(r()*1e6)|0});x+=w+(r()<.25?1.5:0);}})();
+const TOWER={x0:8,x1:12,z0:19.5,z1:23.5,h:21,apex:29};
+const TREES=[];
+(()=>{const r=rng(7);
+  const add=(x,z,h,type)=>TREES.push({x,z,h,type,seed:(r()*1e6)|0});
+  for(let i=0;i<16;i++)add(-15-r()*24,-14+r()*44,4+r()*4,r()<.35?'pine':'round');
+  for(let i=0;i<16;i++)add(15+r()*24,-14+r()*44,4+r()*4,r()<.35?'pine':'round');
+  for(let i=0;i<22;i++)add(-45+r()*90,29+r()*16,6+r()*5,r()<.5?'pine':'round');
+  add(-10.5,10,5.2,'round');add(10.5,10,5.4,'round');add(-11,1,4.6,'round');add(11.5,2,4.8,'round');
+})();
+const LAMPS=[[-6,6],[6,6],[-6,13],[6,13]];
+const POSTS=[];for(let x=-17;x<=17.01;x+=1.7){if(Math.abs(x)<2)continue;POSTS.push(x);}
+const FLOWERS=[];(()=>{const r=rng(31),cols=['#e76f51','#f2b84b','#fffaf0','#d9a0d0'];for(let i=0;i<90;i++){const x=(r()<.5?-1:1)*(2.3+r()*14.5);FLOWERS.push({x,z:-1.05-r()*.7,h:.22+r()*.22,c:cols[r()*4|0]});}})();
+const CLOUDS=[[-62,17,9],[-28,24,12],[8,13,7],[36,21,10],[70,15,9],[110,19,11],[-100,20,10]];
+const RIDGES=[{R:900,amp:70,base:40,col:'#a4b9c6',seed:3},{R:260,amp:16,base:10,col:'#a9c6a0',seed:5},{R:170,amp:9,base:5,col:'#93b787',seed:9}];
+const SUN={az:28*D2R,el:13*D2R};
+
+/* ================= KAMERA ================= */
+function makeCam(pos,yaw,pitch,roll,fov,W,H){
+  const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
+  const f=[sy*cp,sp,cy*cp],r=[cy,0,-sy],u=[-sp*sy,cp,-sp*cy],F=(H/2)/Math.tan(fov/2);
+  return{pos,yaw,pitch,roll,fov,f,r,u,F,W,H,
+    depth:p=>(p[0]-pos[0])*f[0]+(p[1]-pos[1])*f[1]+(p[2]-pos[2])*f[2],
+    proj:p=>{const dx=p[0]-pos[0],dy=p[1]-pos[1],dz=p[2]-pos[2],z=dx*f[0]+dy*f[1]+dz*f[2],x=dx*r[0]+dz*r[2],y=dx*u[0]+dy*u[1]+dz*u[2];return[W/2+F*x/z,H/2-F*y/z,z];}};
+}
+function clipPoly(cam,pts){const out=[];for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length],da=cam.depth(a),db=cam.depth(b);if(da>=NEAR)out.push(a);if((da>=NEAR)!==(db>=NEAR)){const t=(NEAR-da)/(db-da);out.push(L3(a,b,t));}}return out;}
+function fillPoly(g,cam,pts,col){const c=clipPoly(cam,pts);if(c.length<3)return;g.beginPath();c.forEach((p,i)=>{const q=cam.proj(p);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1]);});g.closePath();g.fillStyle=col;g.fill();}
+function seg(g,cam,a,b){let da=cam.depth(a),db=cam.depth(b);if(da<NEAR&&db<NEAR)return;if(da<NEAR)a=L3(a,b,(NEAR-da)/(db-da));else if(db<NEAR)b=L3(b,a,(NEAR-db)/(da-db));const p=cam.proj(a),q=cam.proj(b);g.moveTo(p[0],p[1]);g.lineTo(q[0],q[1]);}
+/* billboard: lokální souřadnice v metrech, chodidla v (0,0), nahoru záporné y */
+function sprite(g,cam,base,height,draw){
+  // při pohledu shora se „papírové“ objekty trochu natočí ke kameře, aby nevypadaly jako položené
+  const k=clamp(-cam.pitch/(60*D2R),0,1)*.55;let up=[cam.u[0]*k,1-k+cam.u[1]*k,cam.u[2]*k];const ul=Math.hypot(...up);up=up.map(v=>v/ul);
+  const top=[base[0]+up[0]*height,base[1]+up[1]*height,base[2]+up[2]*height],db=cam.depth(base),dt=cam.depth(top);if(db<NEAR||dt<NEAR)return;
+  const pf=cam.proj(base),ph=cam.proj(top),s=cam.F/((db+dt)/2);
+  if(pf[0]<-cam.W*.6-s*height||pf[0]>cam.W*1.6+s*height)return;
+  g.save();g.transform(s,0,-(ph[0]-pf[0])/height,-(ph[1]-pf[1])/height,pf[0],pf[1]);draw(g);g.restore();
+}
+
+/* ================= KRESLENÍ OBJEKTŮ ================= */
+const C={navy:'#1d2b45',coral:'#e76f51',must:'#f2b84b',teal:'#2a7c7a',cream:'#fffaf0',brown:'#7d5038'};
+function circ(g,x,y,r,col){g.fillStyle=col;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();}
+function ell(g,x,y,rx,ry,col){g.fillStyle=col;g.beginPath();g.ellipse(x,y,rx,ry,0,0,Math.PI*2);g.fill();}
+function poly(g,pts,col){g.fillStyle=col;g.beginPath();pts.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();g.fill();}
+function treeSprite(g,t){
+  const H=t.h,r=rng(t.seed);
+  if(t.type==='pine'){g.fillStyle='#5a3c2a';g.fillRect(-H*.035,-H*.18,H*.07,H*.18);
+    for(let i=0;i<4;i++){const y=-H*(.14+i*.2),w=H*(.3-i*.055);poly(g,[[-w,y],[w,y],[0,y-H*.34]],i%2?'#2f5d50':'#3a6d5c');poly(g,[[-w*.15,y-H*.02],[w*.75,y-H*.02],[0,y-H*.3]],'rgba(255,255,255,.08)');}
+    return;}
+  g.fillStyle='#6d4a34';poly(g,[[-H*.04,0],[H*.04,0],[H*.025,-H*.5],[-H*.025,-H*.5]],'#6d4a34');
+  const c1=['#6b9f5b','#77a865','#5f9452'][r()*3|0];
+  circ(g,H*.08,-H*.6,H*.26,'#4f7f48');circ(g,-H*.12,-H*.58,H*.22,'#4f7f48');
+  circ(g,0,-H*.68,H*.28,c1);circ(g,-H*.17,-H*.6,H*.18,c1);circ(g,H*.18,-H*.58,H*.17,c1);
+  circ(g,-H*.07,-H*.8,H*.12,'rgba(214,232,180,.55)');
+}
+function lampSprite(g){g.fillStyle='#2b3a4a';g.fillRect(-.06,-3.6,.12,3.6);g.fillRect(-.16,-3.62,.32,.08);circ(g,0,-3.85,.42,'rgba(255,225,160,.25)');poly(g,[[-.17,-3.62],[.17,-3.62],[.12,-4.0],[-.12,-4.0]],'#2b3a4a');g.fillStyle='#ffe3a8';g.fillRect(-.1,-3.95,.2,.28);}
+function postSprite(g){g.fillStyle='#8a6a4a';g.fillRect(-.06,-1,.12,1);poly(g,[[-.06,-1],[.06,-1],[0,-1.08]],'#8a6a4a');}
+function flowerSprite(f){return g=>{g.strokeStyle='#4f7f48';g.lineWidth=.025;g.beginPath();g.moveTo(0,0);g.lineTo(0,-f.h);g.stroke();circ(g,0,-f.h,.06,f.c);};}
+/* postava: view 'front' | 'side'; dir 1 = doprava; ph = fáze chůze; walk = jde */
+function personSprite(o){return g=>{
+  const ph=o.ph||0,w=o.walk?1:0,skin='#f0c3a0',hair='#3b2416',coat=C.coral,pants=C.navy;
+  const bob=w?-Math.abs(Math.sin(ph))*.025:0;g.lineCap='round';g.lineJoin='round';
+  if(o.view==='side'){
+    const d=o.dir||1,s1=Math.sin(ph)*w,s2=Math.sin(ph+Math.PI)*w;
+    const leg=(s,col)=>{g.strokeStyle=col;g.lineWidth=.13;g.beginPath();g.moveTo(0,-.86+bob);g.lineTo(d*s*.12,-.45+bob);g.lineTo(d*s*.26,-.04-Math.max(0,-s)*.06);g.stroke();ell(g,d*s*.26+d*.05,-.03-Math.max(0,-s)*.06,.09,.04,'#1b2433');};
+    const arm=(s,col)=>{g.strokeStyle=col;g.lineWidth=.1;g.beginPath();g.moveTo(0,-1.3+bob);g.lineTo(-d*s*.16,-.92+bob);g.stroke();circ(g,-d*s*.17,-.88+bob,.05,skin);};
+    leg(s2,'#16223a');arm(s2,'#c95d44');
+    poly(g,[[-.17,-1.38+bob],[.15,-1.38+bob],[.21,-.66+bob],[-.21,-.66+bob]],coat);
+    g.fillStyle=C.must;g.fillRect(-.12,-1.42+bob,.26,.09);
+    leg(s1,pants);arm(s1,coat);
+    poly(g,[[-.04,-1.48+bob],[.05,-1.48+bob],[.05,-1.4+bob],[-.04,-1.4+bob]],skin);
+    circ(g,d*.02,-1.6+bob,.13,skin);poly(g,[[d*.13,-1.62+bob],[d*.17,-1.57+bob],[d*.12,-1.55+bob]],skin);
+    g.fillStyle=hair;g.beginPath();g.arc(d*.02,-1.6+bob,.14,d>0?Math.PI*.55:-Math.PI*.45,d>0?Math.PI*1.95:Math.PI*.95,d<0);g.closePath();g.fill();
+    poly(g,[[-d*.12,-1.62+bob],[-d*.02,-1.66+bob],[-d*.04,-1.3+bob],[-d*.16,-1.33+bob]],hair);
+    circ(g,d*.08,-1.62+bob,.016,'#1b1b1b');
+    return;}
+  // zepředu
+  const l=w?Math.sin(ph):0;
+  for(const [sx,lift] of [[-1,Math.max(0,l)],[1,Math.max(0,-l)]]){g.strokeStyle=pants;g.lineWidth=.13;g.beginPath();g.moveTo(sx*.07,-.8+bob);g.lineTo(sx*.08,-.05-lift*.12);g.stroke();ell(g,sx*.09,-.04-lift*.12,.08,.045,'#1b2433');}
+  poly(g,[[-.19,-1.38+bob],[.19,-1.38+bob],[.25,-.66+bob],[-.25,-.66+bob]],coat);
+  g.strokeStyle='rgba(0,0,0,.12)';g.lineWidth=.02;g.beginPath();g.moveTo(0,-1.36+bob);g.lineTo(0,-.68+bob);g.stroke();
+  for(const sx of [-1,1]){const sw=w?Math.sin(ph+(sx>0?0:Math.PI))*.05:0;g.strokeStyle=coat;g.lineWidth=.1;g.beginPath();g.moveTo(sx*.19,-1.33+bob);g.lineTo(sx*.25,-.95+bob+sw);g.stroke();circ(g,sx*.26,-.9+bob+sw,.05,skin);}
+  g.fillStyle=C.must;g.fillRect(-.15,-1.43+bob,.3,.1);
+  poly(g,[[-.13,-1.62+bob],[.13,-1.62+bob],[.15,-1.3+bob],[-.15,-1.3+bob]],hair);
+  poly(g,[[-.04,-1.48+bob],[.04,-1.48+bob],[.04,-1.41+bob],[-.04,-1.41+bob]],skin);
+  ell(g,0,-1.6+bob,.115,.135,skin);
+  g.fillStyle=hair;g.beginPath();g.ellipse(0,-1.64+bob,.125,.11,0,Math.PI,0);g.fill();
+  circ(g,-.045,-1.6+bob,.016,'#1b1b1b');circ(g,.045,-1.6+bob,.016,'#1b1b1b');
+  g.strokeStyle='#b8473f';g.lineWidth=.014;g.beginPath();g.arc(0,-1.56+bob,.035,.25*Math.PI,.75*Math.PI);g.stroke();
+}}
+
+/* dům a věž jako 3D tělesa */
+function faceVis(cam,pt,n){return(cam.pos[0]-pt[0])*n[0]+(cam.pos[1]-pt[1])*n[1]+(cam.pos[2]-pt[2])*n[2]>0;}
+function drawHouse(g,cam,b){
+  const {x0,x1,z0,z1,h,rh,col,roof}=b,zm=(z0+z1)/2,dz=(z1-z0)/2,faces=[];
+  const add=(pts,n,c,extra)=>{if(faceVis(cam,pts[0],n)){let d=0;for(const p of pts)d+=cam.depth(p);faces.push({pts,c,d:d/pts.length,extra});}};
+  add([[x0,0,z0],[x1,0,z0],[x1,h,z0],[x0,h,z0]],[0,0,-1],col,'front');
+  add([[x1,0,z1],[x0,0,z1],[x0,h,z1],[x1,h,z1]],[0,0,1],shade(col,.8));
+  add([[x0,0,z1],[x0,0,z0],[x0,h,z0],[x0,h+rh,zm],[x0,h,z1]],[-1,0,0],shade(col,.86));
+  add([[x1,0,z0],[x1,0,z1],[x1,h,z1],[x1,h+rh,zm],[x1,h,z0]],[1,0,0],shade(col,.9));
+  add([[x0,h,z0],[x1,h,z0],[x1,h+rh,zm],[x0,h+rh,zm]],[0,dz,-rh],roof);
+  add([[x1,h,z1],[x0,h,z1],[x0,h+rh,zm],[x1,h+rh,zm]],[0,dz,rh],shade(roof,.78));
+  faces.sort((a,b)=>b.d-a.d);
+  for(const f of faces){fillPoly(g,cam,f.pts,f.c);
+    if(f.extra==='front'){const w=x1-x0,n=Math.max(2,Math.floor(w/1.7)),fl=Math.floor((h-1)/2.6),Z=z0-.02;
+      for(let k=1;k<=fl;k++)for(let i=0;i<n;i++){const cx=x0+(i+.5)*w/n,y=k*2.6-.4;if(y+1.3>h-.3)continue;fillPoly(g,cam,[[cx-.4,y,Z],[cx+.4,y,Z],[cx+.4,y+1.2,Z],[cx-.4,y+1.2,Z]],'#4f6f8a');fillPoly(g,cam,[[cx-.4,y+1.05,Z-.01],[cx+.4,y+1.05,Z-.01],[cx+.4,y+1.2,Z-.01],[cx-.4,y+1.2,Z-.01]],'rgba(255,255,255,.25)');}
+      const dc=(x0+x1)/2;fillPoly(g,cam,[[dc-.55,0,Z],[dc+.55,0,Z],[dc+.55,2.1,Z],[dc-.55,2.1,Z]],'#6b4428');}}
+}
+function drawTower(g,cam){
+  const {x0,x1,z0,z1,h,apex}=TOWER,cx=(x0+x1)/2,cz=(z0+z1)/2,col='#efe2c6',faces=[];
+  const add=(pts,n,c,extra)=>{if(faceVis(cam,pts[0],n)){let d=0;for(const p of pts)d+=cam.depth(p);faces.push({pts,c,d:d/pts.length,extra});}};
+  add([[x0,0,z0],[x1,0,z0],[x1,h,z0],[x0,h,z0]],[0,0,-1],col,'front');
+  add([[x1,0,z1],[x0,0,z1],[x0,h,z1],[x1,h,z1]],[0,0,1],shade(col,.8));
+  add([[x0,0,z1],[x0,0,z0],[x0,h,z0],[x0,h,z1]],[-1,0,0],shade(col,.86));
+  add([[x1,0,z0],[x1,0,z1],[x1,h,z1],[x1,h,z0]],[1,0,0],shade(col,.92));
+  const A=[cx,apex,cz],rh=apex-h,hw=(x1-x0)/2;
+  add([[x0,h,z0],[x1,h,z0],A],[0,hw,-rh],'#3f8f86');add([[x1,h,z1],[x0,h,z1],A],[0,hw,rh],'#2b6a63');
+  add([[x0,h,z1],[x0,h,z0],A],[-rh,hw,0],'#327a72');add([[x1,h,z0],[x1,h,z1],A],[rh,hw,0],'#38837a');
+  faces.sort((a,b)=>b.d-a.d);
+  for(const f of faces){fillPoly(g,cam,f.pts,f.c);
+    if(f.extra==='front'){const Z=z0-.02;
+      fillPoly(g,cam,[[x0,h-.6,Z],[x1,h-.6,Z],[x1,h,Z],[x0,h,Z]],'#d9c7a2');
+      const clk=[];for(let i=0;i<28;i++){const a=i/28*Math.PI*2;clk.push([cx+Math.cos(a)*1.25,h-2.6+Math.sin(a)*1.25,Z]);}fillPoly(g,cam,clk,'#fffaf0');
+      g.strokeStyle='#1d2b45';g.lineWidth=Math.max(1.2,cam.F/Math.max(1,cam.depth([cx,h-2.6,Z]))*.09);g.lineCap='round';g.beginPath();seg(g,cam,[cx,h-2.6,Z-.01],[cx,h-1.75,Z-.01]);seg(g,cam,[cx,h-2.6,Z-.01],[cx+.6,h-2.75,Z-.01]);g.stroke();
+      for(const y of [7,12.5]){fillPoly(g,cam,[[cx-.45,y,Z],[cx+.45,y,Z],[cx+.45,y+1.8,Z],[cx,y+2.3,Z],[cx-.45,y+1.8,Z]],'#4f6f8a');}
+      fillPoly(g,cam,[[cx-.8,0,Z],[cx+.8,0,Z],[cx+.8,2.4,Z],[cx,3,Z],[cx-.8,2.4,Z]],'#6b4428');}}
+}
+function groundCircle(cx,cz,r,n=36){const p=[];for(let i=0;i<n;i++){const a=i/n*Math.PI*2;p.push([cx+Math.cos(a)*r,0,cz+Math.sin(a)*r]);}return p;}
+
+/* ================= VYKRESLENÍ SNÍMKU ================= */
+function render(g,cam,S){
+  const {W,H,F}=cam,M=Math.hypot(W,H);
+  g.save();g.translate(W/2,H/2);g.rotate(cam.roll);g.translate(-W/2,-H/2);
+  const yh=H/2+F*Math.tan(cam.pitch);
+  let gr=g.createLinearGradient(0,yh-F*1.6,0,yh);gr.addColorStop(0,'#6fa6c0');gr.addColorStop(.55,'#bcd9dc');gr.addColorStop(.88,'#f6e3c6');gr.addColorStop(1,'#fbd3a8');
+  g.fillStyle=gr;g.fillRect(-M,-M*3,W+2*M,M*3+yh+2);
+  // slunce
+  const sd=[Math.sin(SUN.az)*Math.cos(SUN.el),Math.sin(SUN.el),Math.cos(SUN.az)*Math.cos(SUN.el)],sp=[cam.pos[0]+sd[0]*1e4,cam.pos[1]+sd[1]*1e4,cam.pos[2]+sd[2]*1e4];
+  if(cam.depth(sp)>0){const q=cam.proj(sp),R=F*.32;const rg=g.createRadialGradient(q[0],q[1],0,q[0],q[1],R);rg.addColorStop(0,'rgba(255,240,205,.9)');rg.addColorStop(.25,'rgba(255,225,180,.35)');rg.addColorStop(1,'rgba(255,220,170,0)');g.fillStyle=rg;g.fillRect(q[0]-R,q[1]-R,2*R,2*R);circ(g,q[0],q[1],F*.045,'#fff3d6');}
+  // mraky
+  for(const [az,el,s] of CLOUDS){const a=az*D2R,e=el*D2R,d=[Math.sin(a)*Math.cos(e),Math.sin(e),Math.cos(a)*Math.cos(e)],p=[cam.pos[0]+d[0]*1e4,cam.pos[1]+d[1]*1e4,cam.pos[2]+d[2]*1e4];if(cam.depth(p)<=0)continue;const q=cam.proj(p),k=F*s*D2R*.5;
+    g.fillStyle='rgba(255,250,240,.92)';g.beginPath();g.moveTo(q[0]-k,q[1]);g.arc(q[0]-k*.4,q[1],k*.6,Math.PI,0);g.arc(q[0]+k*.35,q[1],k*.8,Math.PI,0);g.arc(q[0]+k*1.15,q[1],k*.5,Math.PI,0);g.closePath();g.fill();}
+  // ptáci
+  g.strokeStyle='rgba(40,50,70,.7)';g.lineCap='round';
+  for(let i=0;i<5;i++){const a=(-30+i*4+S.time*1.5)*D2R,e=(19+Math.sin(i*1.7)*2.2)*D2R,d=[Math.sin(a)*Math.cos(e),Math.sin(e),Math.cos(a)*Math.cos(e)],p=[cam.pos[0]+d[0]*900,cam.pos[1]+d[1]*900,cam.pos[2]+d[2]*900];if(cam.depth(p)<=0)continue;const q=cam.proj(p),k=F*.012,fl=Math.sin(S.time*7+i)*.5;g.lineWidth=Math.max(1.2,k*.35);g.beginPath();g.moveTo(q[0]-k,q[1]+k*fl*.3);g.quadraticCurveTo(q[0]-k*.4,q[1]-k*.5*(1-fl*.4),q[0],q[1]);g.quadraticCurveTo(q[0]+k*.4,q[1]-k*.5*(1-fl*.4),q[0]+k,q[1]+k*fl*.3);g.stroke();}
+  // země
+  gr=g.createLinearGradient(0,yh,0,yh+F*.8);gr.addColorStop(0,'#9cc283');gr.addColorStop(1,'#6f9f5c');g.fillStyle=gr;g.fillRect(-M,yh,W+2*M,M*3);
+  // hory a kopce
+  for(const R of RIDGES){const r=rng(R.seed),ph=[r()*6,r()*6,r()*6],pts=[];
+    for(let a=-180;a<=180;a+=3){const t=a*D2R,h=R.base+R.amp*(.55*Math.sin(t*3+ph[0])+.3*Math.sin(t*7+ph[1])+.15*Math.sin(t*13+ph[2])+.4);pts.push([Math.sin(t)*R.R,h,Math.cos(t)*R.R]);}
+    // po kouscích, aby se ořez před kamerou dal zvládnout
+    for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];fillPoly(g,cam,[a,b,[b[0],-2,b[2]],[a[0],-2,a[2]]],R.col);}}
+  // dlažba náměstí, cesta, kruh
+  fillPoly(g,cam,[[-1.3,0,-60],[1.3,0,-60],[1.3,0,-4],[-1.3,0,-4]],'#dcc9a2');
+  fillPoly(g,cam,[[-13,0,-4],[13,0,-4],[13,0,18],[-13,0,18]],'#d9c7a3');
+  g.strokeStyle='rgba(150,125,90,.28)';g.lineWidth=1;g.beginPath();
+  for(let z=-4;z<=18;z+=1.1)seg(g,cam,[-13,0,z],[13,0,z]);for(let x=-13;x<=13;x+=1.1)seg(g,cam,[x,0,-4],[x,0,18]);g.stroke();
+  fillPoly(g,cam,groundCircle(0,10,4.2),'#c9ad84');fillPoly(g,cam,groundCircle(0,10,3.4),'#e7d8b6');fillPoly(g,cam,groundCircle(0,10,1.2),'#7fb070');
+  // stíny
+  for(const t of TREES)fillPoly(g,cam,groundCircle(t.x+.4,t.z+.2,t.h*.2,14),'rgba(40,60,30,.16)');
+  // objekty seřazené podle vzdálenosti
+  const items=[];
+  for(const b of HOUSES)items.push({d:cam.depth([(b.x0+b.x1)/2,b.h/2,(b.z0+b.z1)/2]),fn:()=>drawHouse(g,cam,b)});
+  items.push({d:cam.depth([10,10,21.5]),fn:()=>drawTower(g,cam)});
+  for(const t of TREES)items.push({d:cam.depth([t.x,t.h/2,t.z]),fn:()=>sprite(g,cam,[t.x,0,t.z],t.h,gg=>treeSprite(gg,t))});
+  for(const [x,z] of LAMPS)if(!(S.noLamp&&x>0&&z>10))items.push({d:cam.depth([x,2,z]),fn:()=>sprite(g,cam,[x,0,z],4,lampSprite)});
+  for(const x of POSTS)items.push({d:cam.depth([x,.5,-.6]),fn:()=>sprite(g,cam,[x,0,-.6],1.08,postSprite)});
+  for(let i=0;i<POSTS.length-1;i++){const a=POSTS[i],b=POSTS[i+1];if(b-a>2)continue;items.push({d:cam.depth([(a+b)/2,.6,-.6])+.05,fn:()=>{const dd=Math.max(.3,cam.depth([(a+b)/2,.6,-.6]));g.strokeStyle='#9a7a56';g.lineWidth=Math.max(1,cam.F/dd*.06);g.lineCap='butt';g.beginPath();seg(g,cam,[a,.45,-.6],[b,.45,-.6]);seg(g,cam,[a,.85,-.6],[b,.85,-.6]);g.stroke();}});}
+  for(const f of FLOWERS)items.push({d:cam.depth([f.x,.2,f.z]),fn:()=>sprite(g,cam,[f.x,0,f.z],f.h,flowerSprite(f))});
+  if(S.girl){const p=S.girl;items.push({d:cam.depth([p.pos[0],.9,p.pos[2]]),fn:()=>{fillPoly(g,cam,groundCircle(p.pos[0]+.15,p.pos[2]+.1,.38,16),'rgba(40,40,30,.22)');sprite(g,cam,p.pos,1.75,personSprite(p));}});}
+  items.sort((a,b)=>b.d-a.d);for(const it of items)it.fn();
+  g.restore();
+}
+
+/* ================= POHYBY ================= */
+const MOVES=[
+ {id:'pan',name:'Švenk (panoráma)',en:'pan',diag:'top',dur:8,
+  what:'Kamera stojí na jednom místě, nejčastěji na stativu, a otáčí se do strany kolem svislé osy.',
+  effect:'Postupně odhaluje prostor a ukazuje krajinu. Může také sledovat postavu, která jde kolem, nebo propojit dvě místa či dvě postavy.',
+  note:'Předměty se vůči sobě neposouvají: strom vpředu i hory vzadu se v obraze pohybují stejně, protože se kamera jen otáčí.',
+  at(p){return{cam:{pos:[0,1.6,-13],yaw:lerp(-55,55,ease(p))*D2R,pitch:2*D2R,roll:0,fov:38*D2R},girl:{pos:[-4,0,2],view:'front'}};}},
+ {id:'tilt',name:'Vertikální švenk',en:'tilt',diag:'side',dur:7,
+  what:'Kamera stojí na místě a naklání se nahoru nebo dolů.',
+  effect:'Odhaluje výšku: budovu, strom nebo postavu od bot až k obličeji. Pohled vzhůru dodává věži velikost a vznešenost.',
+  note:'Nahoře se svislé hrany věže sbíhají. Kamera se dívá vzhůru, ale stále stojí na jednom místě.',
+  at(p){return{cam:{pos:[10,1.5,11.5],yaw:0,pitch:lerp(-8,58,ease(p))*D2R,roll:0,fov:42*D2R},girl:{pos:[8.4,0,17.6],view:'front'}};}},
+ {id:'track',name:'Jízda',en:'tracking / dolly shot',diag:'top',dur:8,variant:true,
+  what:'Kamera se pohybuje prostorem: po kolejích na vozíku (dolly), na autě nebo v rukou kameramana. Při souběžné jízdě jede vedle postavy, při jízdě dopředu se k ní přibližuje.',
+  effect:'Obraz působí hluboce a prostorově. Souběžná jízda diváka nechává „jít s postavou“, jízda dopředu ho vtahuje do děje a zdůrazní, co je důležité.',
+  note:'Paralaxa: plot vpředu ubíhá rychle, stromy pomaleji a hory vzadu se skoro nehýbou. Podle toho jízdu poznáš.',
+  at(p,v){
+    if(v==='in'){const e=ease(p);return{cam:{pos:[0,1.5,lerp(-14,.2,e)],yaw:0,pitch:lerp(1,-3,e)*D2R,roll:0,fov:40*D2R},girl:{pos:[0,0,3],view:'front'}};}
+    const x=lerp(-9,9,p);return{cam:{pos:[x,1.4,-4],yaw:0,pitch:0,roll:0,fov:42*D2R},girl:{pos:[x,0,2.4],view:'side',dir:1,walk:p>0&&p<1,ph:x*2.6}};}},
+ {id:'crane',name:'Jeřáb',en:'crane shot',diag:'side',dur:9,
+  what:'Kamera je na rameni jeřábu a plynule stoupá nebo klesá. Většinou se při tom zároveň naklání.',
+  effect:'Působí velkolepě. Hodí se pro úvodní a závěrečné záběry: postava se postupně „ztrácí“ v prostoru, nebo naopak sestoupíme z výšky přímo k ní.',
+  note:'Jak kamera stoupá, otevírá se pohled na celé náměstí a střechy. Bližší věci se posouvají rychleji, protože se kamera pohybuje.',
+  at(p){const e=ease(p),pos=[0,lerp(1.2,24,e),lerp(-2.5,-12,e)],T=[0,lerp(1.4,0,e),lerp(3,8,e)];return{cam:{pos,yaw:0,pitch:Math.atan2(T[1]-pos[1],T[2]-pos[2]),roll:0,fov:lerp(42,52,e)*D2R},girl:{pos:[0,0,3],view:'front'}};}},
+ {id:'hand',name:'Ruční kamera',en:'handheld',diag:'top',dur:8,
+  what:'Kameraman drží kameru v rukou nebo na rameni a couvá před postavou. Obraz se chvěje a pohupuje v rytmu kroků.',
+  effect:'Působí autenticky, dokumentárně a neklidně. Divák má pocit, že je přímo u toho. Hodí se pro napjaté, chaotické nebo velmi osobní scény.',
+  note:'Obraz se třese i v klidu, a když kameraman jde, houpe se v rytmu kroků. Porovnej se steadicamem, který jede po stejné dráze.',
+  at(p,v,T){return follow(p,T,true);}},
+ {id:'steadi',name:'Steadicam',en:'steadicam',diag:'top',dur:8,
+  what:'Kamera je na stabilizačním držáku s pružným ramenem a vestou. Kameraman chodí volně, ale obraz plyne hladce, jako by se vznášel.',
+  effect:'Spojuje volnost ruční kamery s plynulostí jízdy. Používá se pro dlouhé záběry, které sledují postavu prostorem. Steadicam vznikl v 70. letech.',
+  note:'Kamera jde stejnou cestou jako u ruční kamery, ale bez otřesů. Zůstalo jen jemné „plutí“.',
+  at(p,v,T){return follow(p,T,false);}},
+ {id:'zoom',name:'Zoom (transfokace)',en:'zoom',diag:'top',dur:7,
+  what:'Kamera stojí na místě a mění se jen ohnisková vzdálenost objektivu. Obraz se zvětšuje (přibližuje) nebo zmenšuje.',
+  effect:'Rychle upozorní na detail. Na rozdíl od jízdy se nemění perspektiva, takže prostor se „zplošťuje“: postava i domy vzadu se zvětšují stejně.',
+  note:'Porovnej se jízdou dopředu. U jízdy postava roste mnohem rychleji než domy vzadu, u zoomu rostou stejně.',
+  at(p){const e=ease(p);return{cam:{pos:[0,1.5,-14],yaw:0,pitch:lerp(.5,-1.6,e)*D2R,roll:0,fov:lerp(52,8.5,e)*D2R},girl:{pos:[0,0,3],view:'front'}};}},
+ {id:'vertigo',name:'Jízda se zoomem',en:'dolly zoom, efekt Vertigo',diag:'top',dur:8,
+  what:'Kamera jede dozadu a současně zoomuje dopředu, takže postava zůstává stejně velká.',
+  effect:'Pozadí se nepřirozeně natahuje a prostor se „deformuje“. Vyvolává závrať, šok nebo náhlé uvědomění. Proslavil ho Alfred Hitchcock ve filmu Vertigo (1958), známý je i z Čelistí (1975).',
+  note:'Postava má pořád stejnou velikost, ale domy a věž za ní se zvětšují. Je to kombinace jízdy a zoomu proti sobě.',
+  at(p){const e=ease(p),d=lerp(3,40,e),G=[2,0,5],dir=[-.436,-.9],fov=2*Math.atan(1.25/d);
+    return{cam:{pos:[G[0]+dir[0]*d,1.2,G[2]+dir[1]*d],yaw:Math.atan2(-dir[0],-dir[1]),pitch:Math.atan2(-.2,d),roll:0,fov},girl:{pos:G,view:'front'},noLamp:true};}}
+];
+/* cesta pro ruční kameru a steadicam: postava jde ke kameře, kamera couvá před ní */
+function noise(t,s){return .5*Math.sin(t*1.7+s)+.3*Math.sin(t*3.1+s*2.3)+.2*Math.sin(t*5.7+s*4.1);}
+function follow(p,T,shaky){
+  const e=p,gz=lerp(15,3,e),gx=lerp(-1.2,1.2,Math.sin(e*Math.PI*.9)),walking=p>0&&p<1;
+  let pos=[gx*.85,1.55,gz-3.6],yaw=Math.atan2(gx-pos[0],gz-pos[2])*.9,pitch=-4*D2R,roll=0;
+  if(shaky){const step=walking?Math.sin(T*9.2):0;
+    pos=[pos[0]+noise(T*1.3,1)*.05,pos[1]+noise(T*1.6,2)*.035+Math.abs(step)*.05,pos[2]+noise(T*1.1,3)*.04];
+    yaw+=(noise(T*1.9,4)*1.6+step*.5)*D2R;pitch+=(noise(T*2.2,5)*1.3+Math.abs(step)*.6)*D2R;roll=(noise(T*1.5,6)*2.2+step*.8)*D2R;}
+  else{pos=[pos[0]+Math.sin(T*.7)*.03,pos[1]+Math.sin(T*.9)*.02,pos[2]];roll=Math.sin(T*.6)*.35*D2R;}
+  return{cam:{pos,yaw,pitch,roll,fov:44*D2R},girl:{pos:[gx,0,gz],view:'front',walk:walking,ph:gz*-2.4}};
+}
+
+/* ================= SCHÉMA ================= */
+const diag=$('diag'),dg=diag.getContext('2d');
+function drawDiag(m,st,variant){
+  const dpr=Math.min(2,window.devicePixelRatio||1),W=diag.clientWidth,H=diag.clientHeight;if(!W)return;
+  if(diag.width!==Math.round(W*dpr)){diag.width=Math.round(W*dpr);diag.height=Math.round(H*dpr);}
+  const g=dg;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const cam=st.cam,trail=[];for(let i=0;i<=60;i++){const s=m.at(i/60,variant,i/60*m.dur);trail.push(s.cam.pos);}
+  if(m.diag==='top'){
+    // půdorys: x doprava, z nahoru
+    const X0=-34,X1=34,Z0=-26,Z1=30,s=Math.min(W/(X1-X0),H/(Z1-Z0)),ox=(W-(X1-X0)*s)/2,oy=(H-(Z1-Z0)*s)/2;
+    const P=(x,z)=>[ox+(x-X0)*s,H-oy-(z-Z0)*s];
+    g.fillStyle='#cfe2bf';g.fillRect(0,0,W,H);
+    const rect=(x0,z0,x1,z1,c)=>{const a=P(x0,z1),b=P(x1,z0);g.fillStyle=c;g.fillRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);};
+    rect(-13,-4,13,18,'#e6d6b4');rect(-1.3,-26,1.3,-4,'#e6d6b4');
+    for(const b of HOUSES)rect(b.x0,b.z0,b.x1,b.z1,'#c4583f');rect(TOWER.x0,TOWER.z0,TOWER.x1,TOWER.z1,'#2f7a72');
+    for(const t of TREES){const q=P(t.x,t.z);circ(g,q[0],q[1],Math.max(2,t.h*.2*s),t.type==='pine'?'#3a6d5c':'#5f9452');}
+    g.strokeStyle='#8a6a4a';g.lineWidth=2;g.beginPath();let a=P(-17,-.6),b=P(-2,-.6);g.moveTo(...a);g.lineTo(...b);a=P(2,-.6);b=P(17,-.6);g.moveTo(...a);g.lineTo(...b);g.stroke();
+    // dráha
+    g.strokeStyle='#2a7c7a';g.lineWidth=2.5;g.setLineDash([5,4]);g.beginPath();trail.forEach((p,i)=>{const q=P(p[0],p[2]);i?g.lineTo(...q):g.moveTo(...q);});g.stroke();g.setLineDash([]);
+    // postava
+    if(st.girl){const q=P(st.girl.pos[0],st.girl.pos[2]);circ(g,q[0],q[1],5,'#e76f51');g.strokeStyle='#fff';g.lineWidth=1.5;g.beginPath();g.arc(q[0],q[1],5,0,Math.PI*2);g.stroke();}
+    // kamera a zorné pole
+    const hf=Math.atan(Math.tan(cam.fov/2)*16/9),q=P(cam.pos[0],cam.pos[2]),L=Math.max(W,H)*.5,ang=-Math.PI/2+cam.yaw;
+    g.fillStyle='rgba(29,43,69,.16)';g.strokeStyle='rgba(29,43,69,.75)';g.lineWidth=1.3;g.beginPath();g.moveTo(...q);g.lineTo(q[0]+Math.cos(ang-hf)*L,q[1]+Math.sin(ang-hf)*L);g.lineTo(q[0]+Math.cos(ang+hf)*L,q[1]+Math.sin(ang+hf)*L);g.closePath();g.fill();g.stroke();
+    g.save();g.translate(...q);g.rotate(ang+Math.PI/2);g.fillStyle='#1d2b45';g.fillRect(-7,0,14,10);g.beginPath();g.moveTo(-5,0);g.lineTo(5,0);g.lineTo(3,-5);g.lineTo(-3,-5);g.closePath();g.fill();g.restore();
+  }else{
+    // pohled z boku: z doprava, y nahoru
+    const Z0=-16,Z1=31,Y0=-1,Y1=31,s=Math.min(W/(Z1-Z0),H/(Y1-Y0)),ox=(W-(Z1-Z0)*s)/2,oy=(H-(Y1-Y0)*s)/2;
+    const P=(z,y)=>[ox+(z-Z0)*s,H-oy-(y-Y0)*s];
+    g.fillStyle='#e3eef0';g.fillRect(0,0,W,H);const gnd=P(0,0)[1];g.fillStyle='#cfe2bf';g.fillRect(0,gnd,W,H);
+    g.fillStyle='#c4583f';{const a=P(18,8),b=P(25,0);g.fillRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);g.beginPath();g.moveTo(...P(18,8));g.lineTo(...P(21.5,11));g.lineTo(...P(25,8));g.fill();}
+    g.fillStyle='#e8dcc0';{const a=P(TOWER.z0,TOWER.h),b=P(TOWER.z1,0);g.fillRect(a[0],a[1],b[0]-a[0],b[1]-a[1]);}g.fillStyle='#2f7a72';g.beginPath();g.moveTo(...P(TOWER.z0,TOWER.h));g.lineTo(...P(21.5,TOWER.apex));g.lineTo(...P(TOWER.z1,TOWER.h));g.fill();
+    g.fillStyle='#5f9452';for(const z of [10,-1]){const c=P(z,3.6);circ(g,c[0],c[1],2.2*s,'#5f9452');g.fillStyle='#6d4a34';const t=P(z,2);g.fillRect(t[0]-1,t[1],2,gnd-t[1]);}
+    if(st.girl){const f=P(st.girl.pos[2],0),h=P(st.girl.pos[2],1.7);g.strokeStyle='#e76f51';g.lineWidth=Math.max(3,.4*s);g.lineCap='round';g.beginPath();g.moveTo(f[0],f[1]);g.lineTo(h[0],h[1]+2);g.stroke();circ(g,h[0],h[1],Math.max(3,.18*s),'#e76f51');}
+    g.strokeStyle='#2a7c7a';g.lineWidth=2.5;g.setLineDash([5,4]);g.beginPath();trail.forEach((p,i)=>{const q=P(p[2],p[1]);i?g.lineTo(...q):g.moveTo(...q);});g.stroke();g.setLineDash([]);
+    if(m.id==='crane'){const q=P(cam.pos[2],cam.pos[1]),base=P(-18,0);g.strokeStyle='#6b7280';g.lineWidth=3;g.beginPath();g.moveTo(base[0],base[1]);g.lineTo(base[0],base[1]-8);g.lineTo(q[0],q[1]);g.stroke();}
+    const q=P(cam.pos[2],cam.pos[1]),L=Math.max(W,H)*.6;
+    g.fillStyle='rgba(29,43,69,.16)';g.strokeStyle='rgba(29,43,69,.75)';g.lineWidth=1.3;g.beginPath();g.moveTo(...q);for(const a of [cam.pitch+cam.fov/2,cam.pitch-cam.fov/2])g.lineTo(q[0]+Math.cos(a)*L,q[1]-Math.sin(a)*L);g.closePath();g.fill();g.stroke();
+    g.save();g.translate(...q);g.rotate(-cam.pitch);g.fillStyle='#1d2b45';g.fillRect(-12,-6,12,12);g.beginPath();g.moveTo(0,-4);g.lineTo(6,-6);g.lineTo(6,6);g.lineTo(0,4);g.closePath();g.fill();g.restore();
+  }
+}
+
+/* ================= UI A SMYČKA ================= */
+const view=$('view'),vg=view.getContext('2d');
+let cur=MOVES[0],variant='side',playing=true,speed=1,T=0,last=0,lastDraw=0;
+const HOLD0=.7,HOLD1=1.4;
+let NOISE=null;
+function grain(g,W,H,t){
+  if(!NOISE){NOISE=document.createElement('canvas');NOISE.width=NOISE.height=256;const n=NOISE.getContext('2d'),r=rng(77),id=n.createImageData(256,256);for(let i=0;i<id.data.length;i+=4){const v=r()<.5?0:255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=r()*110;}n.putImageData(id,0,0);}
+  g.save();g.globalAlpha=.07;const ox=(t*997)%256,oy=(t*613)%256;g.translate(-ox,-oy);g.fillStyle=g.createPattern(NOISE,'repeat');g.fillRect(0,0,W+256,H+256);g.restore();
+  const vg2=g.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.05);vg2.addColorStop(0,'rgba(0,0,0,0)');vg2.addColorStop(1,'rgba(20,15,10,.32)');g.fillStyle=vg2;g.fillRect(0,0,W,H);
+}
+function total(){return HOLD0+cur.dur+HOLD1;}
+function progress(){return clamp((T-HOLD0)/cur.dur,0,1);}
+function frame(){
+  const W=view.width,H=view.height;if(!W)return;
+  const p=progress(),st=cur.at(p,variant,T);
+  const c=st.cam,cam=makeCam(c.pos,c.yaw,c.pitch,c.roll,c.fov,W,H);
+  vg.setTransform(1,0,0,1,0,0);
+  render(vg,cam,{girl:st.girl,time:T,noLamp:st.noLamp});
+  grain(vg,W,H,Math.floor(T*24));
+  drawDiag(cur,st,variant);
+  if(!scrubbing)$('scrub').value=Math.round(T/total()*1000);
+}
+function loop(ts){
+  requestAnimationFrame(loop);
+  const dt=last?Math.min(.1,(ts-last)/1000):0;last=ts;
+  if(playing){T+=dt*speed;if(T>total())T=0;}
+  frame();
+}
+function layout(){const r=view.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),k=Math.min(dpr,1600/Math.max(1,r.width));view.width=Math.round(r.width*k);view.height=Math.round(r.height*k);}
+function selectMove(m){
+  cur=m;T=0;
+  document.querySelectorAll('#moves button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.id===m.id));
+  $('mName').textContent=m.name;$('mEn').textContent=m.en;$('mWhat').textContent=m.what;$('mEffect').textContent=m.effect;$('mNote').textContent=m.note;
+  $('tag').textContent=m.name+(m.variant?(variant==='in'?' · dopředu':' · do strany'):'');
+  $('dTitle').textContent=m.diag==='top'?'Schéma: půdorys (pohled shora)':'Schéma: pohled z boku';
+  $('variant').classList.toggle('on',!!m.variant);
+  const cmp={hand:['steadi','Porovnej se steadicamem →'],steadi:['hand','Porovnej s ruční kamerou →'],zoom:['track:in','Porovnej s jízdou dopředu →'],track:['zoom','Porovnej se zoomem →'],vertigo:['zoom','Porovnej s obyčejným zoomem →'],pan:['track:side','Porovnej se souběžnou jízdou →']}[m.id];
+  const b=$('cmp');b.hidden=!cmp;if(cmp){b.textContent=cmp[1];b.onclick=()=>{const [id,v]=cmp[0].split(':');if(v){variant=v;syncVariant();}selectMove(MOVES.find(x=>x.id===id));};}
+  playing=true;$('play').textContent='❚❚ Pauza';
+}
+function syncVariant(){document.querySelectorAll('#variant [data-v]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===variant));}
+MOVES.forEach((m,i)=>{const b=document.createElement('button');b.dataset.id=m.id;b.innerHTML=`<span class="n">${m.id==='vertigo'?'★':i+1}</span>${m.name}`;b.addEventListener('click',()=>selectMove(m));$('moves').appendChild(b);});
+document.querySelectorAll('#variant [data-v]').forEach(b=>b.addEventListener('click',()=>{variant=b.dataset.v;syncVariant();selectMove(cur);}));
+document.querySelectorAll('#speed [data-s]').forEach(b=>b.addEventListener('click',()=>{speed=+b.dataset.s;document.querySelectorAll('#speed [data-s]').forEach(x=>x.setAttribute('aria-pressed',x===b));}));
+document.querySelector('#speed [data-s="1"]').setAttribute('aria-pressed','true');
+$('play').addEventListener('click',()=>{playing=!playing;if(playing&&T>=total()-.01)T=0;$('play').textContent=playing?'❚❚ Pauza':'▶ Přehrát';});
+let scrubbing=false;const sc=$('scrub');
+sc.addEventListener('input',()=>{scrubbing=true;T=sc.value/1000*total();});
+sc.addEventListener('change',()=>{scrubbing=false;});
+document.addEventListener('keydown',e=>{if(e.key===' '&&e.target.tagName!=='INPUT'&&e.target.tagName!=='BUTTON'){e.preventDefault();$('play').click();}});
+window.addEventListener('resize',layout);if(window.ResizeObserver)new ResizeObserver(layout).observe(view);
+syncVariant();layout();selectMove(MOVES[0]);requestAnimationFrame(loop);
+window.pohyby={MOVES,set:(id,t,v)=>{if(v){variant=v;syncVariant();}selectMove(MOVES.find(m=>m.id===id));playing=false;T=t;frame();}};
+})();
+</script>
+</body>
+</html>
